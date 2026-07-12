@@ -117,8 +117,15 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-      <Outlet />
+      <div className="dark min-h-screen">
+        <SiteHeader />
+        <main className="mx-auto max-w-6xl px-4 py-6">
+          <Outlet />
+        </main>
+        <footer className="mx-auto max-w-6xl px-4 py-8 text-center text-xs text-muted-foreground">
+          <span className="urdu">بیت بازی — کلاسیکی اردو شاعری کا سب سے بڑا خزانہ</span>
+        </footer>
+      </div>
     </QueryClientProvider>
   );
 }
