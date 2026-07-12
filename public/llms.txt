@@ -1,0 +1,9 @@
+# Bait Baazi
+
+> AI-powered Urdu Bait Baazi platform. Browse classical shair by starting and ending letter, search the library, and play against an AI opponent.
+
+## Pages
+- [Home](/): Overview, featured shair, alphabet quick-jump
+- [Browse letters](/browse): All 36 Urdu letters, start or end mode
+- [Search](/search): Full-text Urdu poetry search
+- [Play](/play): Bait Baazi game against an AI opponent

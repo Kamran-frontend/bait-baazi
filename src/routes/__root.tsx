@@ -11,6 +11,7 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
+import { SiteHeader } from "@/components/site-header";
 
 function NotFoundComponent() {
   return (
@@ -77,21 +78,19 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
-      { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { title: "بیت بازی — Urdu Bait Baazi | AI-Powered Shair Library" },
+      { name: "description", content: "The largest AI-powered Urdu Bait Baazi platform. Browse shair by starting and ending letters, search classical poetry, and play Bait Baazi against an AI opponent." },
+      { property: "og:title", content: "بیت بازی — AI Urdu Bait Baazi" },
+      { property: "og:description", content: "Play Bait Baazi, browse Urdu shair by every alphabet, and search the finest classical poetry." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:site", content: "@Lovable" },
     ],
     links: [
-      {
-        rel: "stylesheet",
-        href: appCss,
-      },
+      { rel: "stylesheet", href: appCss },
       { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
+      { rel: "preconnect", href: "https://fonts.googleapis.com" },
+      { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
+      { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" },
     ],
   }),
   shellComponent: RootShell,
@@ -102,7 +101,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootShell({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="ur" dir="rtl">
       <head>
         <HeadContent />
       </head>
@@ -119,8 +118,15 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-      <Outlet />
+      <div className="dark min-h-screen">
+        <SiteHeader />
+        <main className="mx-auto max-w-6xl px-4 py-6">
+          <Outlet />
+        </main>
+        <footer className="mx-auto max-w-6xl px-4 py-8 text-center text-xs text-muted-foreground">
+          <span className="urdu">بیت بازی — کلاسیکی اردو شاعری کا سب سے بڑا خزانہ</span>
+        </footer>
+      </div>
     </QueryClientProvider>
   );
 }
