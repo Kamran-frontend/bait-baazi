@@ -10,7 +10,9 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SearchRouteImport } from './routes/search'
+import { Route as PlayRouteImport } from './routes/play'
 import { Route as BrowseRouteImport } from './routes/browse'
+import { Route as AuthRouteImport } from './routes/auth'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as LetterModeLetterRouteImport } from './routes/letter.$mode.$letter'
 
@@ -19,9 +21,19 @@ const SearchRoute = SearchRouteImport.update({
   path: '/search',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PlayRoute = PlayRouteImport.update({
+  id: '/play',
+  path: '/play',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const BrowseRoute = BrowseRouteImport.update({
   id: '/browse',
   path: '/browse',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -37,34 +49,55 @@ const LetterModeLetterRoute = LetterModeLetterRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
   '/browse': typeof BrowseRoute
+  '/play': typeof PlayRoute
   '/search': typeof SearchRoute
   '/letter/$mode/$letter': typeof LetterModeLetterRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
   '/browse': typeof BrowseRoute
+  '/play': typeof PlayRoute
   '/search': typeof SearchRoute
   '/letter/$mode/$letter': typeof LetterModeLetterRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
   '/browse': typeof BrowseRoute
+  '/play': typeof PlayRoute
   '/search': typeof SearchRoute
   '/letter/$mode/$letter': typeof LetterModeLetterRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/browse' | '/search' | '/letter/$mode/$letter'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/browse'
+    | '/play'
+    | '/search'
+    | '/letter/$mode/$letter'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/browse' | '/search' | '/letter/$mode/$letter'
-  id: '__root__' | '/' | '/browse' | '/search' | '/letter/$mode/$letter'
+  to: '/' | '/auth' | '/browse' | '/play' | '/search' | '/letter/$mode/$letter'
+  id:
+    | '__root__'
+    | '/'
+    | '/auth'
+    | '/browse'
+    | '/play'
+    | '/search'
+    | '/letter/$mode/$letter'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AuthRoute: typeof AuthRoute
   BrowseRoute: typeof BrowseRoute
+  PlayRoute: typeof PlayRoute
   SearchRoute: typeof SearchRoute
   LetterModeLetterRoute: typeof LetterModeLetterRoute
 }
@@ -78,11 +111,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SearchRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/play': {
+      id: '/play'
+      path: '/play'
+      fullPath: '/play'
+      preLoaderRoute: typeof PlayRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/browse': {
       id: '/browse'
       path: '/browse'
       fullPath: '/browse'
       preLoaderRoute: typeof BrowseRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -104,7 +151,9 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AuthRoute: AuthRoute,
   BrowseRoute: BrowseRoute,
+  PlayRoute: PlayRoute,
   SearchRoute: SearchRoute,
   LetterModeLetterRoute: LetterModeLetterRoute,
 }
