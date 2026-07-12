@@ -14,16 +14,261 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      books: {
+        Row: {
+          created_at: string
+          id: string
+          page_count: number | null
+          poet_id: string | null
+          source_pdf: string | null
+          title_english: string | null
+          title_urdu: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          page_count?: number | null
+          poet_id?: string | null
+          source_pdf?: string | null
+          title_english?: string | null
+          title_urdu: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          page_count?: number | null
+          poet_id?: string | null
+          source_pdf?: string | null
+          title_english?: string | null
+          title_urdu?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "books_poet_id_fkey"
+            columns: ["poet_id"]
+            isOneToOne: false
+            referencedRelation: "poets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      favorites: {
+        Row: {
+          created_at: string
+          id: string
+          shair_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          shair_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          shair_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "favorites_shair_id_fkey"
+            columns: ["shair_id"]
+            isOneToOne: false
+            referencedRelation: "shair"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pdf_uploads: {
+        Row: {
+          created_at: string
+          error_message: string | null
+          extracted_count: number | null
+          filename: string
+          id: string
+          status: string
+          storage_path: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          error_message?: string | null
+          extracted_count?: number | null
+          filename: string
+          id?: string
+          status?: string
+          storage_path: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          error_message?: string | null
+          extracted_count?: number | null
+          filename?: string
+          id?: string
+          status?: string
+          storage_path?: string
+          uploaded_by?: string | null
+        }
+        Relationships: []
+      }
+      poets: {
+        Row: {
+          bio: string | null
+          created_at: string
+          era: string | null
+          id: string
+          name_english: string | null
+          name_urdu: string
+        }
+        Insert: {
+          bio?: string | null
+          created_at?: string
+          era?: string | null
+          id?: string
+          name_english?: string | null
+          name_urdu: string
+        }
+        Update: {
+          bio?: string | null
+          created_at?: string
+          era?: string | null
+          id?: string
+          name_english?: string | null
+          name_urdu?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          display_name: string | null
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          display_name?: string | null
+          id: string
+        }
+        Update: {
+          created_at?: string
+          display_name?: string | null
+          id?: string
+        }
+        Relationships: []
+      }
+      shair: {
+        Row: {
+          approved: boolean
+          book_id: string | null
+          category: string | null
+          created_at: string
+          difficulty: number | null
+          end_letter: string
+          id: string
+          is_attack: boolean | null
+          keywords: string[] | null
+          page_number: number | null
+          poet_id: string | null
+          popularity: number | null
+          search_vector: unknown
+          source: string | null
+          start_letter: string
+          tags: string[] | null
+          text_urdu: string
+        }
+        Insert: {
+          approved?: boolean
+          book_id?: string | null
+          category?: string | null
+          created_at?: string
+          difficulty?: number | null
+          end_letter: string
+          id?: string
+          is_attack?: boolean | null
+          keywords?: string[] | null
+          page_number?: number | null
+          poet_id?: string | null
+          popularity?: number | null
+          search_vector?: unknown
+          source?: string | null
+          start_letter: string
+          tags?: string[] | null
+          text_urdu: string
+        }
+        Update: {
+          approved?: boolean
+          book_id?: string | null
+          category?: string | null
+          created_at?: string
+          difficulty?: number | null
+          end_letter?: string
+          id?: string
+          is_attack?: boolean | null
+          keywords?: string[] | null
+          page_number?: number | null
+          poet_id?: string | null
+          popularity?: number | null
+          search_vector?: unknown
+          source?: string | null
+          start_letter?: string
+          tags?: string[] | null
+          text_urdu?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shair_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "books"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shair_poet_id_fkey"
+            columns: ["poet_id"]
+            isOneToOne: false
+            referencedRelation: "poets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      show_limit: { Args: never; Returns: number }
+      show_trgm: { Args: { "": string }; Returns: string[] }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "user"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +395,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "user"],
+    },
   },
 } as const
