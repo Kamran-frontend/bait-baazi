@@ -18,6 +18,8 @@ export function SiteHeader() {
     { to: "/browse", label: "حروف" },
     { to: "/search", label: "تلاش" },
     { to: "/play", label: "بیت بازی" },
+    { to: "/tournament", label: "ٹورنامنٹ" },
+    { to: "/practice", label: "مشق" },
     { to: "/favorites", label: "پسندیدہ" },
     { to: "/admin", label: "ایڈمن" },
   ] as const;

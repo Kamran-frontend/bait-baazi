@@ -3,7 +3,7 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { shairStatsQuery, shairByStartLetterQuery } from "@/lib/queries";
 import { URDU_LETTERS } from "@/lib/urdu";
 import { ShairCard, LetterChip } from "@/components/shair-card";
-import { BookOpen, Search, Swords, Sparkles } from "lucide-react";
+import { BookOpen, GraduationCap, Search, Swords, Sparkles, Trophy } from "lucide-react";
 
 export const Route = createFileRoute("/")({
   loader: async ({ context }) => {
@@ -37,14 +37,20 @@ function Home() {
         <p className="urdu text-lg sm:text-2xl text-parchment/90 max-w-2xl mx-auto">
           کلاسیکی اردو شاعری کا سب سے بڑا خزانہ — ہر حرف پر شعر، ہر شعر پر جواب
         </p>
-        <div className="mt-6 flex flex-wrap justify-center gap-3">
-          <Link to="/play" className="bg-gold-gradient rounded-lg px-6 py-3 font-ltr font-semibold inline-flex items-center gap-2 shadow-[var(--shadow-gold)] hover:opacity-90">
-            <Swords className="h-4 w-4" /> Play Bait Baazi
+        <div className="mt-6 flex flex-wrap justify-center gap-2 sm:gap-3">
+          <Link to="/play" className="bg-gold-gradient rounded-lg px-4 sm:px-6 py-2.5 sm:py-3 font-ltr text-sm sm:text-base font-semibold inline-flex items-center gap-2 shadow-[var(--shadow-gold)] hover:opacity-90">
+            <Swords className="h-4 w-4" /> Play
           </Link>
-          <Link to="/browse" className="border border-gold/40 text-gold rounded-lg px-6 py-3 font-ltr font-semibold inline-flex items-center gap-2 hover:bg-gold/10">
-            <BookOpen className="h-4 w-4" /> Browse Letters
+          <Link to="/tournament" className="bg-gold-gradient rounded-lg px-4 sm:px-6 py-2.5 sm:py-3 font-ltr text-sm sm:text-base font-semibold inline-flex items-center gap-2 shadow-[var(--shadow-gold)] hover:opacity-90">
+            <Trophy className="h-4 w-4" /> Tournament
           </Link>
-          <Link to="/search" className="border border-gold/20 text-parchment/90 rounded-lg px-6 py-3 font-ltr font-semibold inline-flex items-center gap-2 hover:bg-accent/50">
+          <Link to="/practice" className="border border-gold/40 text-gold rounded-lg px-4 sm:px-6 py-2.5 sm:py-3 font-ltr text-sm sm:text-base font-semibold inline-flex items-center gap-2 hover:bg-gold/10">
+            <GraduationCap className="h-4 w-4" /> Practice
+          </Link>
+          <Link to="/browse" className="border border-gold/40 text-gold rounded-lg px-4 sm:px-6 py-2.5 sm:py-3 font-ltr text-sm sm:text-base font-semibold inline-flex items-center gap-2 hover:bg-gold/10">
+            <BookOpen className="h-4 w-4" /> Browse
+          </Link>
+          <Link to="/search" className="border border-gold/20 text-parchment/90 rounded-lg px-4 sm:px-6 py-2.5 sm:py-3 font-ltr text-sm sm:text-base font-semibold inline-flex items-center gap-2 hover:bg-accent/50">
             <Search className="h-4 w-4" /> Search
           </Link>
         </div>

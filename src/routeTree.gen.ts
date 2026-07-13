@@ -9,8 +9,10 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TournamentRouteImport } from './routes/tournament'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as SearchRouteImport } from './routes/search'
+import { Route as PracticeRouteImport } from './routes/practice'
 import { Route as PlayRouteImport } from './routes/play'
 import { Route as FavoritesRouteImport } from './routes/favorites'
 import { Route as BrowseRouteImport } from './routes/browse'
@@ -19,6 +21,11 @@ import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as LetterModeLetterRouteImport } from './routes/letter.$mode.$letter'
 
+const TournamentRoute = TournamentRouteImport.update({
+  id: '/tournament',
+  path: '/tournament',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
   path: '/sitemap.xml',
@@ -27,6 +34,11 @@ const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
 const SearchRoute = SearchRouteImport.update({
   id: '/search',
   path: '/search',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PracticeRoute = PracticeRouteImport.update({
+  id: '/practice',
+  path: '/practice',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PlayRoute = PlayRouteImport.update({
@@ -72,8 +84,10 @@ export interface FileRoutesByFullPath {
   '/browse': typeof BrowseRoute
   '/favorites': typeof FavoritesRoute
   '/play': typeof PlayRoute
+  '/practice': typeof PracticeRoute
   '/search': typeof SearchRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/tournament': typeof TournamentRoute
   '/letter/$mode/$letter': typeof LetterModeLetterRoute
 }
 export interface FileRoutesByTo {
@@ -83,8 +97,10 @@ export interface FileRoutesByTo {
   '/browse': typeof BrowseRoute
   '/favorites': typeof FavoritesRoute
   '/play': typeof PlayRoute
+  '/practice': typeof PracticeRoute
   '/search': typeof SearchRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/tournament': typeof TournamentRoute
   '/letter/$mode/$letter': typeof LetterModeLetterRoute
 }
 export interface FileRoutesById {
@@ -95,8 +111,10 @@ export interface FileRoutesById {
   '/browse': typeof BrowseRoute
   '/favorites': typeof FavoritesRoute
   '/play': typeof PlayRoute
+  '/practice': typeof PracticeRoute
   '/search': typeof SearchRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/tournament': typeof TournamentRoute
   '/letter/$mode/$letter': typeof LetterModeLetterRoute
 }
 export interface FileRouteTypes {
@@ -108,8 +126,10 @@ export interface FileRouteTypes {
     | '/browse'
     | '/favorites'
     | '/play'
+    | '/practice'
     | '/search'
     | '/sitemap.xml'
+    | '/tournament'
     | '/letter/$mode/$letter'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -119,8 +139,10 @@ export interface FileRouteTypes {
     | '/browse'
     | '/favorites'
     | '/play'
+    | '/practice'
     | '/search'
     | '/sitemap.xml'
+    | '/tournament'
     | '/letter/$mode/$letter'
   id:
     | '__root__'
@@ -130,8 +152,10 @@ export interface FileRouteTypes {
     | '/browse'
     | '/favorites'
     | '/play'
+    | '/practice'
     | '/search'
     | '/sitemap.xml'
+    | '/tournament'
     | '/letter/$mode/$letter'
   fileRoutesById: FileRoutesById
 }
@@ -142,13 +166,22 @@ export interface RootRouteChildren {
   BrowseRoute: typeof BrowseRoute
   FavoritesRoute: typeof FavoritesRoute
   PlayRoute: typeof PlayRoute
+  PracticeRoute: typeof PracticeRoute
   SearchRoute: typeof SearchRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  TournamentRoute: typeof TournamentRoute
   LetterModeLetterRoute: typeof LetterModeLetterRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/tournament': {
+      id: '/tournament'
+      path: '/tournament'
+      fullPath: '/tournament'
+      preLoaderRoute: typeof TournamentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/sitemap.xml': {
       id: '/sitemap.xml'
       path: '/sitemap.xml'
@@ -161,6 +194,13 @@ declare module '@tanstack/react-router' {
       path: '/search'
       fullPath: '/search'
       preLoaderRoute: typeof SearchRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/practice': {
+      id: '/practice'
+      path: '/practice'
+      fullPath: '/practice'
+      preLoaderRoute: typeof PracticeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/play': {
@@ -222,20 +262,12 @@ const rootRouteChildren: RootRouteChildren = {
   BrowseRoute: BrowseRoute,
   FavoritesRoute: FavoritesRoute,
   PlayRoute: PlayRoute,
+  PracticeRoute: PracticeRoute,
   SearchRoute: SearchRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
+  TournamentRoute: TournamentRoute,
   LetterModeLetterRoute: LetterModeLetterRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
