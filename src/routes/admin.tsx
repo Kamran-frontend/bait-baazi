@@ -2,9 +2,13 @@ import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { claimAdmin, myRole, addShair, extractShairFromText, deleteShair } from "@/lib/admin.functions";
+import {
+  claimAdmin, myRole, addShair, editShair, extractShairFromText,
+  deleteShair, uploadAndExtractPdf, reclassifyAllShair,
+  listOpenFlags, resolveFlag,
+} from "@/lib/admin.functions";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Loader2, Shield, Sparkles, Trash2 } from "lucide-react";
+import { CheckCircle2, FileUp, Flag, Loader2, Pencil, RefreshCw, Shield, Sparkles, Trash2, X } from "lucide-react";
 
 export const Route = createFileRoute("/admin")({
   ssr: false,
@@ -16,12 +20,19 @@ export const Route = createFileRoute("/admin")({
   component: AdminPage,
 });
 
+type ShairRow = { id: string; text_urdu: string; start_letter: string; end_letter: string; source: string | null; created_at: string; poet_id?: string | null; book_id?: string | null };
+
 function AdminPage() {
   const askRole = useServerFn(myRole);
   const askClaim = useServerFn(claimAdmin);
   const addFn = useServerFn(addShair);
+  const editFn = useServerFn(editShair);
   const extractFn = useServerFn(extractShairFromText);
   const delFn = useServerFn(deleteShair);
+  const pdfFn = useServerFn(uploadAndExtractPdf);
+  const reclassFn = useServerFn(reclassifyAllShair);
+  const listFlagsFn = useServerFn(listOpenFlags);
+  const resolveFn = useServerFn(resolveFlag);
   const qc = useQueryClient();
 
   const [role, setRole] = useState<string[] | null>(null);
@@ -38,15 +49,32 @@ function AdminPage() {
   const [batchBusy, setBatchBusy] = useState(false);
   const [batchResult, setBatchResult] = useState<string>("");
 
+  const [pdfPoet, setPdfPoet] = useState("");
+  const [pdfBook, setPdfBook] = useState("");
+  const [pdfBusy, setPdfBusy] = useState(false);
+  const [pdfStatus, setPdfStatus] = useState<string>("");
+  const [pdfFile, setPdfFile] = useState<File | null>(null);
+
+  const [reclassBusy, setReclassBusy] = useState(false);
+  const [reclassResult, setReclassResult] = useState<string>("");
+
+  const [edit, setEdit] = useState<ShairRow | null>(null);
+
   useEffect(() => { askRole().then(r => setRole(r.roles)).catch(() => setRole([])); }, [askRole]);
   const isAdmin = role?.includes("admin") ?? false;
 
   const recent = useQuery({
     queryKey: ["admin", "recent-shair"],
     queryFn: async () => {
-      const { data } = await supabase.from("shair").select("id, text_urdu, start_letter, end_letter, source, created_at").order("created_at", { ascending: false }).limit(30);
-      return data ?? [];
+      const { data } = await supabase.from("shair").select("id, text_urdu, start_letter, end_letter, source, created_at, poet_id, book_id").order("created_at", { ascending: false }).limit(30);
+      return (data ?? []) as ShairRow[];
     },
+    enabled: isAdmin,
+  });
+
+  const flags = useQuery({
+    queryKey: ["admin", "flags"],
+    queryFn: () => listFlagsFn(),
     enabled: isAdmin,
   });
 
@@ -54,7 +82,7 @@ function AdminPage() {
 
   if (!isAdmin) {
     return (
-      <div className="max-w-md mx-auto card-royal rounded-2xl p-8 text-center">
+      <div className="max-w-md mx-auto card-royal rounded-2xl p-6 sm:p-8 text-center">
         <Shield className="h-10 w-10 text-gold mx-auto mb-3" />
         <h2 className="urdu text-2xl text-gold mb-2">ایڈمن اکاؤنٹ</h2>
         <p className="font-ltr text-sm text-muted-foreground mb-4">You are signed in but not an admin. Claim admin (first user only):</p>
@@ -69,21 +97,76 @@ function AdminPage() {
     );
   }
 
+  const readFileAsBase64 = (file: File) => new Promise<string>((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => {
+      const s = String(r.result ?? "");
+      const idx = s.indexOf(",");
+      resolve(idx >= 0 ? s.slice(idx + 1) : s);
+    };
+    r.onerror = () => reject(r.error);
+    r.readAsDataURL(file);
+  });
+
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 sm:space-y-8">
       <header className="text-center">
-        <h1 className="urdu text-3xl text-gold">ایڈمن پینل</h1>
+        <h1 className="urdu text-2xl sm:text-3xl text-gold">ایڈمن پینل</h1>
         <p className="font-ltr text-sm text-muted-foreground">Manage the poetry library</p>
       </header>
 
+      {/* PDF Upload + AI/OCR extraction */}
+      <section className="card-royal rounded-2xl p-4 sm:p-6">
+        <div className="flex items-start gap-3 mb-3">
+          <FileUp className="h-5 w-5 text-gold shrink-0 mt-0.5" />
+          <div className="min-w-0">
+            <h2 className="urdu text-lg sm:text-xl text-gold">PDF اپلوڈ کریں (AI + OCR)</h2>
+            <p className="font-ltr text-xs sm:text-sm text-muted-foreground">Upload a PDF (scanned or text). Gemini reads every page — Urdu, Arabic, Farsi, with diacritics — and extracts each shair.</p>
+          </div>
+        </div>
+        <div className="grid gap-3">
+          <input
+            type="file" accept="application/pdf"
+            onChange={e => setPdfFile(e.target.files?.[0] ?? null)}
+            className="font-ltr text-sm file:me-3 file:px-3 file:py-2 file:rounded-md file:border-0 file:bg-gold-gradient file:font-semibold file:cursor-pointer"
+          />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <input dir="rtl" value={pdfPoet} onChange={e => setPdfPoet(e.target.value)} placeholder="شاعر (اختیاری)"
+              className="urdu rounded-lg bg-input border border-gold/20 p-2.5 focus:border-gold focus:outline-none" />
+            <input dir="rtl" value={pdfBook} onChange={e => setPdfBook(e.target.value)} placeholder="کتاب کا نام (اختیاری)"
+              className="urdu rounded-lg bg-input border border-gold/20 p-2.5 focus:border-gold focus:outline-none" />
+          </div>
+          <button
+            disabled={!pdfFile || pdfBusy}
+            onClick={async () => {
+              if (!pdfFile) return;
+              setPdfBusy(true); setPdfStatus("Reading file…");
+              try {
+                const base64 = await readFileAsBase64(pdfFile);
+                setPdfStatus("Sending to AI — this may take a minute for large books…");
+                const r = await pdfFn({ data: { filename: pdfFile.name, base64, poet_name: pdfPoet, book_title: pdfBook } });
+                setPdfStatus(`✅ Extracted ${r.inserted} shair (${r.duplicates} duplicates skipped).`);
+                setPdfFile(null); qc.invalidateQueries();
+              } catch (e) {
+                setPdfStatus(`❌ ${e instanceof Error ? e.message : "Failed"}`);
+              } finally { setPdfBusy(false); }
+            }}
+            className="bg-gold-gradient rounded-lg px-5 py-2.5 font-ltr font-semibold inline-flex items-center gap-2 disabled:opacity-50 w-full sm:w-auto">
+            {pdfBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileUp className="h-4 w-4" />}
+            Upload & Extract
+          </button>
+          {pdfStatus && <p className="font-ltr text-sm break-words">{pdfStatus}</p>}
+        </div>
+      </section>
+
       {/* Manual add */}
-      <section className="card-royal rounded-2xl p-6">
-        <h2 className="urdu text-xl text-gold mb-3">شعر شامل کریں</h2>
+      <section className="card-royal rounded-2xl p-4 sm:p-6">
+        <h2 className="urdu text-lg sm:text-xl text-gold mb-3">شعر شامل کریں</h2>
         <div className="grid gap-3">
           <textarea rows={3} dir="rtl" value={manualText} onChange={e => setManualText(e.target.value)}
-            placeholder="مکمل شعر (دو مصرعے) لکھیں…"
-            className="urdu text-xl rounded-lg bg-input border border-gold/20 p-3 focus:border-gold focus:outline-none" />
-          <div className="grid grid-cols-2 gap-3">
+            placeholder="مکمل شعر (دو مصرعے) لکھیں — زیر زبر پیش سب محفوظ رہیں گے…"
+            className="urdu text-lg sm:text-xl rounded-lg bg-input border border-gold/20 p-3 focus:border-gold focus:outline-none" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <input dir="rtl" value={manualPoet} onChange={e => setManualPoet(e.target.value)} placeholder="شاعر (اختیاری)"
               className="urdu rounded-lg bg-input border border-gold/20 p-2.5 focus:border-gold focus:outline-none" />
             <input dir="rtl" value={manualBook} onChange={e => setManualBook(e.target.value)} placeholder="کتاب (اختیاری)"
@@ -101,15 +184,15 @@ function AdminPage() {
         </div>
       </section>
 
-      {/* AI extraction */}
-      <section className="card-royal rounded-2xl p-6">
-        <h2 className="urdu text-xl text-gold mb-1">AI سے اشعار نکالیں</h2>
-        <p className="font-ltr text-sm text-muted-foreground mb-3">Paste raw Urdu text (copied from a PDF, book, or web page). AI will identify each shair, compute start/end letters, and add them.</p>
+      {/* Paste text extraction */}
+      <section className="card-royal rounded-2xl p-4 sm:p-6">
+        <h2 className="urdu text-lg sm:text-xl text-gold mb-1">متن سے AI اشعار نکالیں</h2>
+        <p className="font-ltr text-xs sm:text-sm text-muted-foreground mb-3">Paste raw Urdu / Arabic / Farsi text. AI splits it into individual shair.</p>
         <div className="grid gap-3">
-          <textarea rows={10} dir="rtl" value={batchText} onChange={e => setBatchText(e.target.value)}
+          <textarea rows={8} dir="rtl" value={batchText} onChange={e => setBatchText(e.target.value)}
             placeholder="Urdu text yahan paste karein…"
             className="urdu rounded-lg bg-input border border-gold/20 p-3 focus:border-gold focus:outline-none" />
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <input dir="rtl" value={batchPoet} onChange={e => setBatchPoet(e.target.value)} placeholder="شاعر (اختیاری)"
               className="urdu rounded-lg bg-input border border-gold/20 p-2.5 focus:border-gold focus:outline-none" />
             <input dir="rtl" value={batchBook} onChange={e => setBatchBook(e.target.value)} placeholder="کتاب (اختیاری)"
@@ -133,19 +216,72 @@ function AdminPage() {
         </div>
       </section>
 
+      {/* Maintenance */}
+      <section className="card-royal rounded-2xl p-4 sm:p-6">
+        <h2 className="urdu text-lg sm:text-xl text-gold mb-2">دیکھ بھال</h2>
+        <p className="font-ltr text-xs text-muted-foreground mb-3">Recompute every shair's start & end letters using the latest Urdu logic (fixes ں / ن and ے / ی confusion).</p>
+        <button disabled={reclassBusy} onClick={async () => {
+          setReclassBusy(true); setReclassResult("");
+          try {
+            const r = await reclassFn();
+            setReclassResult(`Updated ${r.updated} shair${r.failed ? `, ${r.failed} failed` : ""}.`);
+            qc.invalidateQueries();
+          } catch (e) { setReclassResult(e instanceof Error ? e.message : "Failed"); }
+          finally { setReclassBusy(false); }
+        }} className="border border-gold/40 text-gold rounded-lg px-4 py-2 font-ltr text-sm inline-flex items-center gap-2 disabled:opacity-50">
+          {reclassBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+          Reclassify all shair
+        </button>
+        {reclassResult && <p className="font-ltr text-sm mt-2">{reclassResult}</p>}
+      </section>
+
+      {/* Flagged */}
+      <section className="card-royal rounded-2xl p-4 sm:p-6">
+        <h2 className="urdu text-lg sm:text-xl text-gold mb-3 inline-flex items-center gap-2"><Flag className="h-4 w-4" /> رپورٹ شدہ اشعار</h2>
+        {flags.isLoading ? <Loader2 className="h-4 w-4 animate-spin text-gold" /> : (flags.data ?? []).length === 0 ? (
+          <p className="text-muted-foreground text-sm font-ltr">No open flags.</p>
+        ) : (
+          <div className="space-y-3">
+            {(flags.data ?? []).map((f: any) => (
+              <div key={f.id} className="border border-border/60 rounded-lg p-3">
+                <p className="urdu text-lg text-parchment whitespace-pre-line break-words">{f.shair?.text_urdu}</p>
+                <p className="font-ltr text-xs text-muted-foreground mt-1">{f.shair?.start_letter} → {f.shair?.end_letter}</p>
+                {f.reason && <p className="urdu text-sm mt-2 text-destructive/90 break-words">وجہ: {f.reason}</p>}
+                <div className="mt-2 flex flex-wrap gap-2">
+                  <button onClick={async () => { await resolveFn({ data: { id: f.id, action: "dismiss" } }); flags.refetch(); }}
+                    className="font-ltr text-xs px-3 py-1.5 rounded-md border border-gold/40 text-gold inline-flex items-center gap-1">
+                    <CheckCircle2 className="h-3.5 w-3.5" /> Dismiss
+                  </button>
+                  <button onClick={async () => { await resolveFn({ data: { id: f.id, action: "delete_shair", shair_id: f.shair?.id } }); flags.refetch(); qc.invalidateQueries(); }}
+                    className="font-ltr text-xs px-3 py-1.5 rounded-md bg-destructive/80 text-destructive-foreground inline-flex items-center gap-1">
+                    <Trash2 className="h-3.5 w-3.5" /> Delete shair
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+
       {/* Recent */}
-      <section className="card-royal rounded-2xl p-6">
-        <h2 className="urdu text-xl text-gold mb-3">تازہ اشعار</h2>
+      <section className="card-royal rounded-2xl p-4 sm:p-6">
+        <h2 className="urdu text-lg sm:text-xl text-gold mb-3">تازہ اشعار</h2>
         <div className="space-y-2">
           {(recent.data ?? []).map(s => (
-            <div key={s.id} className="flex items-start justify-between gap-3 border-b border-border/50 pb-2">
-              <div>
-                <p className="urdu urdu-lg">{s.text_urdu}</p>
-                <p className="font-ltr text-xs text-muted-foreground">{s.start_letter} → {s.end_letter} · {s.source}</p>
+            <div key={s.id} className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-2 border-b border-border/50 pb-2">
+              <div className="min-w-0">
+                <p className="urdu text-base sm:text-lg break-words whitespace-pre-line">{s.text_urdu}</p>
+                <p className="font-ltr text-[11px] text-muted-foreground mt-1">{s.start_letter} → {s.end_letter} · {s.source}</p>
               </div>
-              <button
-                onClick={async () => { await delFn({ data: { id: s.id } }); qc.invalidateQueries(); }}
-                className="p-2 rounded-md hover:bg-destructive/20 text-destructive"><Trash2 className="h-4 w-4" /></button>
+              <div className="flex items-center gap-1 shrink-0">
+                <button onClick={() => setEdit(s)} className="p-2 rounded-md hover:bg-accent/50 text-gold" aria-label="Edit"><Pencil className="h-4 w-4" /></button>
+                <button
+                  onClick={async () => {
+                    if (!confirm("Delete this shair?")) return;
+                    await delFn({ data: { id: s.id } }); qc.invalidateQueries();
+                  }}
+                  className="p-2 rounded-md hover:bg-destructive/20 text-destructive" aria-label="Delete"><Trash2 className="h-4 w-4" /></button>
+              </div>
             </div>
           ))}
           {!recent.data?.length && <p className="text-muted-foreground text-sm">No shair yet.</p>}
@@ -154,6 +290,49 @@ function AdminPage() {
           <Link to="/" className="font-ltr text-xs text-gold-muted hover:text-gold">← Back home</Link>
         </div>
       </section>
+
+      {edit && <EditModal row={edit} onClose={() => setEdit(null)} onSaved={() => { setEdit(null); qc.invalidateQueries(); }} save={editFn} />}
+    </div>
+  );
+}
+
+function EditModal({ row, onClose, onSaved, save }: {
+  row: ShairRow; onClose: () => void; onSaved: () => void;
+  save: (args: { data: { id: string; text_urdu: string; poet_name?: string; book_title?: string; page_number?: number | null } }) => Promise<unknown>;
+}) {
+  const [text, setText] = useState(row.text_urdu);
+  const [poet, setPoet] = useState("");
+  const [book, setBook] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string>("");
+  return (
+    <div className="fixed inset-0 z-50 grid place-items-center p-3 bg-black/70 backdrop-blur-sm" onClick={onClose}>
+      <div className="card-royal rounded-2xl w-full max-w-lg p-4 sm:p-6" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="urdu text-lg text-gold">شعر ترمیم کریں</h3>
+          <button onClick={onClose} className="p-1 rounded hover:bg-accent/50"><X className="h-4 w-4" /></button>
+        </div>
+        <textarea rows={4} dir="rtl" value={text} onChange={e => setText(e.target.value)}
+          className="urdu text-lg w-full rounded-lg bg-input border border-gold/20 p-3 focus:border-gold focus:outline-none" />
+        <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <input dir="rtl" value={poet} onChange={e => setPoet(e.target.value)} placeholder="شاعر (اپڈیٹ کریں)"
+            className="urdu rounded-lg bg-input border border-gold/20 p-2.5 focus:border-gold focus:outline-none" />
+          <input dir="rtl" value={book} onChange={e => setBook(e.target.value)} placeholder="کتاب (اپڈیٹ کریں)"
+            className="urdu rounded-lg bg-input border border-gold/20 p-2.5 focus:border-gold focus:outline-none" />
+        </div>
+        {err && <p className="text-destructive text-sm font-ltr mt-2">{err}</p>}
+        <div className="mt-4 flex justify-end gap-2">
+          <button onClick={onClose} className="font-ltr text-sm px-4 py-2 rounded-md text-muted-foreground hover:bg-accent/50">Cancel</button>
+          <button disabled={busy} onClick={async () => {
+            setBusy(true); setErr("");
+            try { await save({ data: { id: row.id, text_urdu: text, poet_name: poet, book_title: book } }); onSaved(); }
+            catch (e) { setErr(e instanceof Error ? e.message : "Failed"); }
+            finally { setBusy(false); }
+          }} className="bg-gold-gradient font-ltr text-sm font-semibold px-4 py-2 rounded-md inline-flex items-center gap-2 disabled:opacity-50">
+            {busy && <Loader2 className="h-4 w-4 animate-spin" />} Save
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
