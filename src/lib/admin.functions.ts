@@ -101,7 +101,11 @@ export const editShair = createServerFn({ method: "POST" })
     const end = getEndLetter(data.text_urdu);
     if (!isUrduLetter(start) || !isUrduLetter(end)) throw new Error("Could not detect start/end letter");
     const { poet_id, book_id } = await upsertPoetAndBook(data.poet_name, data.book_title);
-    const patch: Record<string, unknown> = {
+    const patch: {
+      text_urdu: string; start_letter: string; end_letter: string;
+      is_attack: boolean; page_number: number | null;
+      poet_id?: string; book_id?: string;
+    } = {
       text_urdu: data.text_urdu.trim(),
       start_letter: start, end_letter: end,
       is_attack: isAttackLetter(end),
