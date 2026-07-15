@@ -64,7 +64,7 @@ const AddShairInput = z.object({
 
 export const addShair = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => AddShairInput.parse(d))
+  .validator((d: unknown) => AddShairInput.parse(d))
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -87,7 +87,7 @@ export const addShair = createServerFn({ method: "POST" })
 
 export const editShair = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({
+  .validator((d: unknown) => z.object({
     id: z.string().uuid(),
     text_urdu: z.string().min(3),
     poet_name: z.string().optional(),
@@ -120,7 +120,7 @@ export const editShair = createServerFn({ method: "POST" })
 
 export const deleteShair = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
+  .validator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -160,7 +160,7 @@ export const reclassifyAllShair = createServerFn({ method: "POST" })
 /** Extract shair from a plain Urdu text block (paste from clipboard). */
 export const extractShairFromText = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({
+  .validator((d: unknown) => z.object({
     text: z.string().min(20),
     poet_name: z.string().optional(),
     book_title: z.string().optional(),
@@ -206,7 +206,7 @@ ${data.text.slice(0, 15000)}
  */
 export const extractShairFromImages = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({
+  .validator((d: unknown) => z.object({
     images: z.array(z.object({
       mime: z.string().min(3),
       base64: z.string().min(100),
@@ -324,7 +324,7 @@ export const listOpenFlags = createServerFn({ method: "GET" })
 
 export const resolveFlag = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({
+  .validator((d: unknown) => z.object({
     id: z.string().uuid(),
     action: z.enum(["dismiss", "delete_shair"]),
     shair_id: z.string().uuid().optional(),
@@ -374,7 +374,7 @@ export const listUsers = createServerFn({ method: "GET" })
 /** Admin: grant or revoke a role for a user. */
 export const setUserRole = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({
+  .validator((d: unknown) => z.object({
     user_id: z.string().uuid(),
     role: z.enum(["admin", "user"]),
     grant: z.boolean(),
@@ -401,7 +401,7 @@ export const setUserRole = createServerFn({ method: "POST" })
 /** Admin: ban or unban a user (blocks sign-in). */
 export const setUserBanned = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({
+  .validator((d: unknown) => z.object({
     user_id: z.string().uuid(),
     banned: z.boolean(),
   }).parse(d))
@@ -419,7 +419,7 @@ export const setUserBanned = createServerFn({ method: "POST" })
 /** Admin: delete a user account entirely. */
 export const deleteUser = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({ user_id: z.string().uuid() }).parse(d))
+  .validator((d: unknown) => z.object({ user_id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
     if (data.user_id === context.userId) throw new Error("Cannot delete yourself");
