@@ -83,6 +83,12 @@ function AdminPage() {
     enabled: isAdmin,
   });
 
+  const users = useQuery({
+    queryKey: ["admin", "users"],
+    queryFn: () => listUsersFn(),
+    enabled: isAdmin,
+  });
+
   if (role === null) return <div className="text-center py-20"><Loader2 className="h-6 w-6 animate-spin mx-auto text-gold" /></div>;
 
   if (!isAdmin) {
