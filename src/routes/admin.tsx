@@ -30,10 +30,14 @@ function AdminPage() {
   const editFn = useServerFn(editShair);
   const extractFn = useServerFn(extractShairFromText);
   const delFn = useServerFn(deleteShair);
-  const pdfFn = useServerFn(uploadAndExtractPdf);
+  const imgFn = useServerFn(extractShairFromImages);
   const reclassFn = useServerFn(reclassifyAllShair);
   const listFlagsFn = useServerFn(listOpenFlags);
   const resolveFn = useServerFn(resolveFlag);
+  const listUsersFn = useServerFn(listUsers);
+  const setRoleFn = useServerFn(setUserRole);
+  const setBannedFn = useServerFn(setUserBanned);
+  const deleteUserFn = useServerFn(deleteUser);
   const qc = useQueryClient();
 
   const [role, setRole] = useState<string[] | null>(null);
