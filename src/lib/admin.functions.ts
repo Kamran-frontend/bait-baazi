@@ -201,92 +201,64 @@ ${data.text.slice(0, 15000)}
   });
 
 /**
- * Upload a PDF and extract every shair with Gemini vision (AI + OCR in one).
- * Client sends base64-encoded PDF; server stores in the `pdfs` bucket and
- * hands the file to Gemini for direct multimodal parsing.
+ * Extract every shair from one or more uploaded images (photos, screenshots,
+ * or scanned pages). Uses Gemini vision (AI + OCR in one) — no PDF needed.
  */
-export const uploadAndExtractPdf = createServerFn({ method: "POST" })
+export const extractShairFromImages = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({
-    filename: z.string().min(1),
-    base64: z.string().min(100),
+    images: z.array(z.object({
+      mime: z.string().min(3),
+      base64: z.string().min(100),
+    })).min(1).max(10),
     poet_name: z.string().optional(),
     book_title: z.string().optional(),
+    source_label: z.string().optional(),
   }).parse(d))
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
     const apiKey = process.env.LOVABLE_API_KEY;
     if (!apiKey) throw new Error("Missing LOVABLE_API_KEY");
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    // Persist file
-    const path = `${context.userId}/${Date.now()}-${data.filename.replace(/[^\w.\-]+/g, "_")}`;
-    const bytes = Uint8Array.from(atob(data.base64), c => c.charCodeAt(0));
-    if (bytes.byteLength > 20 * 1024 * 1024) {
-      throw new Error("PDF too large — please split into files under 20 MB");
-    }
-    const { error: upErr } = await supabaseAdmin.storage.from("pdfs").upload(path, bytes, {
-      contentType: "application/pdf", upsert: false,
-    });
-    if (upErr) throw new Error(`Storage upload failed: ${upErr.message}`);
-
-    const { data: upRow } = await supabaseAdmin.from("pdf_uploads").insert({
-      filename: data.filename, storage_path: path, uploaded_by: context.userId, status: "processing",
-    }).select("id").single();
-    const uploadId = upRow?.id as string | undefined;
-
-    try {
-      const prompt = `You are an Urdu poetry expert working as an OCR + extractor. This PDF contains an Urdu poetry book (may include Arabic and Farsi words, diacritics such as zair, zabar, pesh, tashdid, madd). Read every page carefully — including scanned/image pages — and identify every complete SHAIR (couplet = two misras / hemistiches).
+    const prompt = `You are an Urdu poetry expert working as OCR + extractor. Each attached image is a photo, screenshot, or scanned page from an Urdu poetry book (may contain Arabic or Farsi words and diacritics such as zair, zabar, pesh, tashdid, madd). Read every image carefully and identify every complete SHAIR (couplet = two misras / hemistiches).
 
 Rules:
-- PRESERVE original Urdu spelling AND all diacritics exactly.
+- PRESERVE original Urdu spelling AND all diacritics exactly as they appear.
 - Keep Arabic and Farsi words as they appear.
-- SKIP prose, prefaces, page numbers, indices, publisher notes, headings.
+- Carefully distinguish ں (noon ghunna) from ن (regular noon), and ے (bari ye) from ی (choti ye) — these are DIFFERENT letters. Look for the dot(s) below noon and the shape of the final ye.
+- SKIP prose, prefaces, headings, page numbers, indices, publisher notes.
 - Only return complete couplets (two misras); skip fragments.
 - Deduplicate identical couplets.
 
 Return JSON only in this exact shape:
-{"shair":[{"text":"first misra\\nsecond misra","page":12}]}`;
+{"shair":[{"text":"first misra\\nsecond misra"}]}`;
 
-      const dataUrl = `data:application/pdf;base64,${data.base64}`;
-      const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
-        body: JSON.stringify({
-          model: "google/gemini-2.5-pro",
-          messages: [{
-            role: "user",
-            content: [
-              { type: "text", text: prompt },
-              { type: "file", file: { filename: data.filename, file_data: dataUrl } },
-            ],
-          }],
-          response_format: { type: "json_object" },
-        }),
-      });
-      if (!resp.ok) {
-        const t = await resp.text();
-        if (resp.status === 429) throw new Error("AI rate limit — retry shortly");
-        if (resp.status === 402) throw new Error("AI credits exhausted — add credits");
-        throw new Error(`AI error ${resp.status}: ${t.slice(0, 300)}`);
-      }
-      const json = await resp.json() as { choices?: { message?: { content?: string } }[] };
-      const items = safeParseShair(json.choices?.[0]?.message?.content ?? "{}");
-      const result = await insertShair(items, data.poet_name, data.book_title, `pdf:${data.filename}`);
-
-      if (uploadId) {
-        await supabaseAdmin.from("pdf_uploads").update({
-          status: "completed", extracted_count: result.inserted,
-        }).eq("id", uploadId);
-      }
-      return { ...result, uploadId };
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : "extract failed";
-      if (uploadId) {
-        await supabaseAdmin.from("pdf_uploads").update({ status: "failed", error_message: msg }).eq("id", uploadId);
-      }
-      throw e;
+    const content: Array<
+      | { type: "text"; text: string }
+      | { type: "image_url"; image_url: { url: string } }
+    > = [{ type: "text", text: prompt }];
+    for (const img of data.images) {
+      content.push({ type: "image_url", image_url: { url: `data:${img.mime};base64,${img.base64}` } });
     }
+
+    const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
+      body: JSON.stringify({
+        model: "google/gemini-2.5-pro",
+        messages: [{ role: "user", content }],
+        response_format: { type: "json_object" },
+      }),
+    });
+    if (!resp.ok) {
+      const t = await resp.text();
+      if (resp.status === 429) throw new Error("AI rate limit — retry shortly");
+      if (resp.status === 402) throw new Error("AI credits exhausted — add credits");
+      throw new Error(`AI error ${resp.status}: ${t.slice(0, 300)}`);
+    }
+    const json = await resp.json() as { choices?: { message?: { content?: string } }[] };
+    const items = safeParseShair(json.choices?.[0]?.message?.content ?? "{}");
+    return insertShair(items, data.poet_name, data.book_title, data.source_label ?? "image");
   });
 
 function safeParseShair(content: string): { text: string; page?: number | null }[] {
@@ -364,5 +336,95 @@ export const resolveFlag = createServerFn({ method: "POST" })
       await supabaseAdmin.from("shair").delete().eq("id", data.shair_id);
     }
     await supabaseAdmin.from("shair_flags").update({ status: "resolved" }).eq("id", data.id);
+    return { ok: true };
+  });
+
+/** Admin: list all users with role + favorite count. */
+export const listUsers = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: authList, error } = await supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 200 });
+    if (error) throw new Error(error.message);
+    const users = authList.users;
+    const ids = users.map(u => u.id);
+    const [{ data: roles }, { data: favs }] = await Promise.all([
+      supabaseAdmin.from("user_roles").select("user_id, role").in("user_id", ids),
+      supabaseAdmin.from("favorites").select("user_id").in("user_id", ids),
+    ]);
+    const roleMap = new Map<string, string[]>();
+    for (const r of roles ?? []) {
+      const arr = roleMap.get(r.user_id) ?? [];
+      arr.push(r.role as string); roleMap.set(r.user_id, arr);
+    }
+    const favCount = new Map<string, number>();
+    for (const f of favs ?? []) favCount.set(f.user_id, (favCount.get(f.user_id) ?? 0) + 1);
+    return users.map(u => ({
+      id: u.id,
+      email: u.email ?? null,
+      created_at: u.created_at,
+      last_sign_in_at: u.last_sign_in_at ?? null,
+      banned_until: (u as unknown as { banned_until?: string | null }).banned_until ?? null,
+      roles: roleMap.get(u.id) ?? [],
+      favorite_count: favCount.get(u.id) ?? 0,
+    }));
+  });
+
+/** Admin: grant or revoke a role for a user. */
+export const setUserRole = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({
+    user_id: z.string().uuid(),
+    role: z.enum(["admin", "user"]),
+    grant: z.boolean(),
+  }).parse(d))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    // Prevent removing your own last admin role by mistake
+    if (!data.grant && data.role === "admin" && data.user_id === context.userId) {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const { count } = await supabaseAdmin.from("user_roles").select("id", { count: "exact", head: true }).eq("role", "admin");
+      if ((count ?? 0) <= 1) throw new Error("Cannot remove the only admin");
+    }
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    if (data.grant) {
+      const { error } = await supabaseAdmin.from("user_roles").upsert({ user_id: data.user_id, role: data.role }, { onConflict: "user_id,role" });
+      if (error) throw new Error(error.message);
+    } else {
+      const { error } = await supabaseAdmin.from("user_roles").delete().eq("user_id", data.user_id).eq("role", data.role);
+      if (error) throw new Error(error.message);
+    }
+    return { ok: true };
+  });
+
+/** Admin: ban or unban a user (blocks sign-in). */
+export const setUserBanned = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({
+    user_id: z.string().uuid(),
+    banned: z.boolean(),
+  }).parse(d))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    if (data.user_id === context.userId) throw new Error("Cannot ban yourself");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin.auth.admin.updateUserById(data.user_id, {
+      ban_duration: data.banned ? "876000h" : "none",
+    });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+/** Admin: delete a user account entirely. */
+export const deleteUser = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ user_id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    if (data.user_id === context.userId) throw new Error("Cannot delete yourself");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin.auth.admin.deleteUser(data.user_id);
+    if (error) throw new Error(error.message);
     return { ok: true };
   });

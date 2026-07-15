@@ -4,11 +4,12 @@ import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import {
   claimAdmin, myRole, addShair, editShair, extractShairFromText,
-  deleteShair, uploadAndExtractPdf, reclassifyAllShair,
+  deleteShair, extractShairFromImages, reclassifyAllShair,
   listOpenFlags, resolveFlag,
+  listUsers, setUserRole, setUserBanned, deleteUser,
 } from "@/lib/admin.functions";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { CheckCircle2, FileUp, Flag, Loader2, Pencil, RefreshCw, Shield, Sparkles, Trash2, X } from "lucide-react";
+import { Ban, CheckCircle2, Flag, ImagePlus, Loader2, Pencil, RefreshCw, Shield, ShieldCheck, Sparkles, Trash2, UserX, X } from "lucide-react";
 
 export const Route = createFileRoute("/admin")({
   ssr: false,
@@ -29,10 +30,14 @@ function AdminPage() {
   const editFn = useServerFn(editShair);
   const extractFn = useServerFn(extractShairFromText);
   const delFn = useServerFn(deleteShair);
-  const pdfFn = useServerFn(uploadAndExtractPdf);
+  const imgFn = useServerFn(extractShairFromImages);
   const reclassFn = useServerFn(reclassifyAllShair);
   const listFlagsFn = useServerFn(listOpenFlags);
   const resolveFn = useServerFn(resolveFlag);
+  const listUsersFn = useServerFn(listUsers);
+  const setRoleFn = useServerFn(setUserRole);
+  const setBannedFn = useServerFn(setUserBanned);
+  const deleteUserFn = useServerFn(deleteUser);
   const qc = useQueryClient();
 
   const [role, setRole] = useState<string[] | null>(null);
@@ -49,11 +54,11 @@ function AdminPage() {
   const [batchBusy, setBatchBusy] = useState(false);
   const [batchResult, setBatchResult] = useState<string>("");
 
-  const [pdfPoet, setPdfPoet] = useState("");
-  const [pdfBook, setPdfBook] = useState("");
-  const [pdfBusy, setPdfBusy] = useState(false);
-  const [pdfStatus, setPdfStatus] = useState<string>("");
-  const [pdfFile, setPdfFile] = useState<File | null>(null);
+  const [imgPoet, setImgPoet] = useState("");
+  const [imgBook, setImgBook] = useState("");
+  const [imgBusy, setImgBusy] = useState(false);
+  const [imgStatus, setImgStatus] = useState<string>("");
+  const [imgFiles, setImgFiles] = useState<File[]>([]);
 
   const [reclassBusy, setReclassBusy] = useState(false);
   const [reclassResult, setReclassResult] = useState<string>("");
@@ -75,6 +80,12 @@ function AdminPage() {
   const flags = useQuery({
     queryKey: ["admin", "flags"],
     queryFn: () => listFlagsFn(),
+    enabled: isAdmin,
+  });
+
+  const users = useQuery({
+    queryKey: ["admin", "users"],
+    queryFn: () => listUsersFn(),
     enabled: isAdmin,
   });
 
@@ -115,49 +126,81 @@ function AdminPage() {
         <p className="font-ltr text-sm text-muted-foreground">Manage the poetry library</p>
       </header>
 
-      {/* PDF Upload + AI/OCR extraction */}
+      {/* Image / screenshot extraction (AI + OCR) */}
       <section className="card-royal rounded-2xl p-4 sm:p-6">
         <div className="flex items-start gap-3 mb-3">
-          <FileUp className="h-5 w-5 text-gold shrink-0 mt-0.5" />
+          <ImagePlus className="h-5 w-5 shrink-0 mt-0.5" />
           <div className="min-w-0">
-            <h2 className="urdu text-lg sm:text-xl text-gold">PDF اپلوڈ کریں (AI + OCR)</h2>
-            <p className="font-ltr text-xs sm:text-sm text-muted-foreground">Upload a PDF (scanned or text). Gemini reads every page — Urdu, Arabic, Farsi, with diacritics — and extracts each shair.</p>
+            <h2 className="urdu text-lg sm:text-xl">تصویر یا اسکرین شاٹ سے اشعار</h2>
+            <p className="font-ltr text-xs sm:text-sm text-muted-foreground">Upload photos of book pages, or paste a screenshot (Ctrl/Cmd + V). AI reads every image and extracts each shair — preserves diacritics, distinguishes ں / ن and ے / ی.</p>
           </div>
         </div>
         <div className="grid gap-3">
+          <div
+            onPaste={e => {
+              const files: File[] = [];
+              for (const item of Array.from(e.clipboardData.items)) {
+                if (item.type.startsWith("image/")) {
+                  const f = item.getAsFile(); if (f) files.push(f);
+                }
+              }
+              if (files.length) setImgFiles(prev => [...prev, ...files]);
+            }}
+            className="rounded-lg border border-dashed border-border p-4 text-center text-sm text-muted-foreground focus:outline-none focus:border-foreground"
+            tabIndex={0}
+          >
+            Paste a screenshot here (Ctrl/Cmd + V) or choose files below
+          </div>
           <input
-            type="file" accept="application/pdf"
-            onChange={e => setPdfFile(e.target.files?.[0] ?? null)}
+            type="file" accept="image/*" multiple
+            onChange={e => setImgFiles(Array.from(e.target.files ?? []))}
             className="font-ltr text-sm file:me-3 file:px-3 file:py-2 file:rounded-md file:border-0 file:bg-gold-gradient file:font-semibold file:cursor-pointer"
           />
+          {imgFiles.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {imgFiles.map((f, i) => (
+                <div key={i} className="relative">
+                  <img src={URL.createObjectURL(f)} alt="" className="h-20 w-20 object-cover rounded-md border border-border" />
+                  <button onClick={() => setImgFiles(prev => prev.filter((_, j) => j !== i))}
+                    className="absolute -top-2 -right-2 bg-foreground text-background rounded-full p-0.5" aria-label="Remove">
+                    <X className="h-3 w-3" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <input dir="rtl" value={pdfPoet} onChange={e => setPdfPoet(e.target.value)} placeholder="شاعر (اختیاری)"
-              className="urdu rounded-lg bg-input border border-gold/20 p-2.5 focus:border-gold focus:outline-none" />
-            <input dir="rtl" value={pdfBook} onChange={e => setPdfBook(e.target.value)} placeholder="کتاب کا نام (اختیاری)"
-              className="urdu rounded-lg bg-input border border-gold/20 p-2.5 focus:border-gold focus:outline-none" />
+            <input dir="rtl" value={imgPoet} onChange={e => setImgPoet(e.target.value)} placeholder="شاعر (اختیاری)"
+              className="urdu rounded-lg bg-input border border-border p-2.5 focus:border-foreground focus:outline-none" />
+            <input dir="rtl" value={imgBook} onChange={e => setImgBook(e.target.value)} placeholder="کتاب (اختیاری)"
+              className="urdu rounded-lg bg-input border border-border p-2.5 focus:border-foreground focus:outline-none" />
           </div>
           <button
-            disabled={!pdfFile || pdfBusy}
+            disabled={imgFiles.length === 0 || imgBusy}
             onClick={async () => {
-              if (!pdfFile) return;
-              setPdfBusy(true); setPdfStatus("Reading file…");
+              if (imgFiles.length === 0) return;
+              setImgBusy(true); setImgStatus("Reading images…");
               try {
-                const base64 = await readFileAsBase64(pdfFile);
-                setPdfStatus("Sending to AI — this may take a minute for large books…");
-                const r = await pdfFn({ data: { filename: pdfFile.name, base64, poet_name: pdfPoet, book_title: pdfBook } });
-                setPdfStatus(`✅ Extracted ${r.inserted} shair (${r.duplicates} duplicates skipped).`);
-                setPdfFile(null); qc.invalidateQueries();
+                const images = await Promise.all(imgFiles.map(async f => ({
+                  mime: f.type || "image/png",
+                  base64: await readFileAsBase64(f),
+                })));
+                setImgStatus("Sending to AI — this may take a moment…");
+                const r = await imgFn({ data: { images, poet_name: imgPoet, book_title: imgBook } });
+                setImgStatus(`✅ Extracted ${r.inserted} shair (${r.duplicates} duplicates skipped).`);
+                setImgFiles([]); qc.invalidateQueries();
               } catch (e) {
-                setPdfStatus(`❌ ${e instanceof Error ? e.message : "Failed"}`);
-              } finally { setPdfBusy(false); }
+                setImgStatus(`❌ ${e instanceof Error ? e.message : "Failed"}`);
+              } finally { setImgBusy(false); }
             }}
             className="bg-gold-gradient rounded-lg px-5 py-2.5 font-ltr font-semibold inline-flex items-center gap-2 disabled:opacity-50 w-full sm:w-auto">
-            {pdfBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileUp className="h-4 w-4" />}
-            Upload & Extract
+            {imgBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <ImagePlus className="h-4 w-4" />}
+            Extract shair
           </button>
-          {pdfStatus && <p className="font-ltr text-sm break-words">{pdfStatus}</p>}
+          {imgStatus && <p className="font-ltr text-sm break-words">{imgStatus}</p>}
         </div>
       </section>
+
 
       {/* Manual add */}
       <section className="card-royal rounded-2xl p-4 sm:p-6">
@@ -259,6 +302,77 @@ function AdminPage() {
                 </div>
               </div>
             ))}
+          </div>
+        )}
+      </section>
+
+      {/* Users */}
+      <section className="card-royal rounded-2xl p-4 sm:p-6">
+        <h2 className="urdu text-lg sm:text-xl mb-3 inline-flex items-center gap-2"><ShieldCheck className="h-4 w-4" /> صارفین</h2>
+        {users.isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : (
+          <div className="overflow-x-auto -mx-2 sm:mx-0">
+            <table className="w-full min-w-[560px] text-sm font-ltr">
+              <thead>
+                <tr className="text-start text-xs text-muted-foreground border-b border-border">
+                  <th className="text-start py-2 px-2">Email</th>
+                  <th className="text-start py-2 px-2">Roles</th>
+                  <th className="text-start py-2 px-2">Last sign-in</th>
+                  <th className="text-start py-2 px-2">Favs</th>
+                  <th className="text-end py-2 px-2">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(users.data ?? []).map(u => {
+                  const isAdminU = u.roles.includes("admin");
+                  const isBanned = !!u.banned_until && new Date(u.banned_until).getTime() > Date.now();
+                  return (
+                    <tr key={u.id} className="border-b border-border/50">
+                      <td className="py-2 px-2 break-all">
+                        {u.email ?? <span className="text-muted-foreground">—</span>}
+                        {isBanned && <span className="ms-2 text-[10px] px-1.5 py-0.5 rounded-full bg-destructive/15 text-destructive">banned</span>}
+                      </td>
+                      <td className="py-2 px-2">
+                        {u.roles.length ? u.roles.map(r => (
+                          <span key={r} className="me-1 text-[10px] px-1.5 py-0.5 rounded-full bg-accent">{r}</span>
+                        )) : <span className="text-muted-foreground text-xs">user</span>}
+                      </td>
+                      <td className="py-2 px-2 text-xs text-muted-foreground">
+                        {u.last_sign_in_at ? new Date(u.last_sign_in_at).toLocaleDateString() : "—"}
+                      </td>
+                      <td className="py-2 px-2">{u.favorite_count}</td>
+                      <td className="py-2 px-2 text-end">
+                        <div className="inline-flex items-center gap-1">
+                          <button
+                            onClick={async () => { await setRoleFn({ data: { user_id: u.id, role: "admin", grant: !isAdminU } }); users.refetch(); }}
+                            className={`text-[11px] px-2 py-1 rounded-md border border-border inline-flex items-center gap-1 hover:bg-accent`}
+                            title={isAdminU ? "Revoke admin" : "Grant admin"}
+                          >
+                            <ShieldCheck className="h-3 w-3" /> {isAdminU ? "Revoke" : "Admin"}
+                          </button>
+                          <button
+                            onClick={async () => { await setBannedFn({ data: { user_id: u.id, banned: !isBanned } }); users.refetch(); }}
+                            className="text-[11px] px-2 py-1 rounded-md border border-border inline-flex items-center gap-1 hover:bg-accent"
+                            title={isBanned ? "Unban" : "Ban"}
+                          >
+                            <Ban className="h-3 w-3" /> {isBanned ? "Unban" : "Ban"}
+                          </button>
+                          <button
+                            onClick={async () => {
+                              if (!confirm(`Permanently delete ${u.email ?? "this user"}?`)) return;
+                              await deleteUserFn({ data: { user_id: u.id } }); users.refetch();
+                            }}
+                            className="text-[11px] px-2 py-1 rounded-md border border-destructive/40 text-destructive inline-flex items-center gap-1 hover:bg-destructive/10"
+                            title="Delete user"
+                          >
+                            <UserX className="h-3 w-3" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
         )}
       </section>

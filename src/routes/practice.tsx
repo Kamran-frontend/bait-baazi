@@ -2,8 +2,9 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { getRandomShair } from "@/lib/ai.functions";
-import { getEndLetter, getStartLetter, isUrduLetter } from "@/lib/urdu";
-import { Eye, Loader2, RotateCcw, SkipForward, Sparkles, Target } from "lucide-react";
+import { getStartLetter, isUrduLetter } from "@/lib/urdu";
+import { useVoiceInput } from "@/hooks/use-voice-input";
+import { Check, Eye, Loader2, Mic, MicOff, RotateCcw, SkipForward, Target, XCircle } from "lucide-react";
 
 export const Route = createFileRoute("/practice")({
   head: () => ({
@@ -107,6 +108,8 @@ function Practice() {
 
       {err && <p className="text-center text-sm text-destructive urdu">{err}</p>}
 
+      {current && !reveal && <VoiceAttempt required={required} />}
+
       <div className="flex flex-wrap gap-2 justify-center">
         {!reveal ? (
           <button onClick={showAnswer} disabled={!current || nextLoading} className="bg-gold-gradient rounded-lg px-4 py-2 font-ltr font-semibold inline-flex items-center gap-2 disabled:opacity-50">
@@ -117,20 +120,62 @@ function Practice() {
             <Target className="h-4 w-4" /> Got it — next
           </button>
         )}
-        <button onClick={skip} className="border border-gold/40 text-gold rounded-lg px-4 py-2 font-ltr text-sm inline-flex items-center gap-1">
+        <button onClick={skip} className="border border-border text-foreground rounded-lg px-4 py-2 font-ltr text-sm inline-flex items-center gap-1">
           <SkipForward className="h-4 w-4" /> Skip
         </button>
-        <button onClick={reset} className="border border-muted-foreground/40 text-muted-foreground rounded-lg px-4 py-2 font-ltr text-sm inline-flex items-center gap-1">
+        <button onClick={reset} className="border border-border text-muted-foreground rounded-lg px-4 py-2 font-ltr text-sm inline-flex items-center gap-1">
           <RotateCcw className="h-4 w-4" /> Reset
         </button>
       </div>
 
-      <p className="text-center text-xs text-muted-foreground font-ltr inline-flex items-center gap-1 justify-center w-full">
-        <Sparkles className="h-3 w-3" /> Tip: اپنے حافظے سے پہلے یاد کریں، پھر جواب دیکھیں
-      </p>
-
       {/* silence lint */}
-      <span className="hidden">{isUrduLetter(getStartLetter(getEndLetter("ا"))) ? "" : ""}</span>
+      <span className="hidden">{isUrduLetter(getStartLetter("ا")) ? "" : ""}</span>
+    </div>
+  );
+}
+
+function VoiceAttempt({ required }: { required: string }) {
+  const [attempt, setAttempt] = useState("");
+  const voice = useVoiceInput({
+    lang: "ur-PK",
+    onFinal: t => setAttempt(t),
+  });
+  const startChar = attempt ? getStartLetter(attempt) : "";
+  const ok = startChar && startChar === required;
+
+  return (
+    <div className="card-royal rounded-2xl p-4 space-y-3">
+      <div className="flex items-center justify-between gap-2 flex-wrap">
+        <p className="urdu text-sm">بول کر شعر سنائیں — یا لکھیں</p>
+        {voice.supported ? (
+          <button
+            onClick={() => voice.listening ? voice.stop() : voice.start()}
+            className={`inline-flex items-center gap-1 rounded-lg px-3 py-1.5 font-ltr text-xs ${voice.listening ? "bg-destructive text-destructive-foreground" : "bg-gold-gradient"}`}
+          >
+            {voice.listening ? <MicOff className="h-3.5 w-3.5" /> : <Mic className="h-3.5 w-3.5" />}
+            {voice.listening ? "Stop" : "Speak"}
+          </button>
+        ) : (
+          <span className="text-[10px] text-muted-foreground font-ltr">Voice input not supported in this browser</span>
+        )}
+      </div>
+      <textarea
+        dir="rtl" rows={2}
+        value={voice.listening ? voice.transcript : attempt}
+        onChange={e => setAttempt(e.target.value)}
+        placeholder="اپنے شعر کا پہلا لفظ لکھیں یا بولیں…"
+        className="urdu w-full rounded-lg bg-input border border-border p-2.5 focus:border-foreground focus:outline-none"
+      />
+      {attempt && (
+        <div className="flex items-center gap-2 text-sm">
+          {ok ? (
+            <span className="inline-flex items-center gap-1 text-foreground"><Check className="h-4 w-4" /> پہلا حرف درست: <span className="urdu text-lg">{startChar}</span></span>
+          ) : (
+            <span className="inline-flex items-center gap-1 text-destructive"><XCircle className="h-4 w-4" /> آپ کا پہلا حرف <span className="urdu text-lg">{startChar || "—"}</span> ہے، درکار <span className="urdu text-lg">{required}</span></span>
+          )}
+        </div>
+      )}
+      {voice.error && <p className="text-xs text-destructive font-ltr">{voice.error}</p>}
     </div>
   );
 }

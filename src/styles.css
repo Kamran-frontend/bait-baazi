@@ -38,44 +38,45 @@
   --color-ink: var(--ink);
   --color-parchment: var(--parchment);
 
-  --gradient-royal: linear-gradient(135deg, oklch(0.14 0.03 300) 0%, oklch(0.19 0.06 300) 55%, oklch(0.22 0.08 320) 100%);
-  --gradient-gold: linear-gradient(135deg, oklch(0.82 0.15 85) 0%, oklch(0.72 0.16 70) 100%);
-  --shadow-gold: 0 10px 40px -12px oklch(0.75 0.15 80 / 0.35);
-  --shadow-elevated: 0 20px 60px -20px oklch(0 0 0 / 0.6);
+  --gradient-royal: linear-gradient(135deg, oklch(1 0 0) 0%, oklch(0.97 0 0) 100%);
+  --gradient-gold: linear-gradient(180deg, oklch(0.18 0 0) 0%, oklch(0.10 0 0) 100%);
+  --shadow-gold: 0 8px 30px -12px oklch(0 0 0 / 0.25);
+  --shadow-elevated: 0 12px 40px -18px oklch(0 0 0 / 0.15);
 }
 
 :root {
   --radius: 0.75rem;
-  /* Deep night + gold */
-  --background: oklch(0.11 0.02 300);
-  --foreground: oklch(0.94 0.02 85);
-  --card: oklch(0.16 0.03 300);
-  --card-foreground: oklch(0.94 0.02 85);
-  --popover: oklch(0.16 0.03 300);
-  --popover-foreground: oklch(0.94 0.02 85);
-  --primary: oklch(0.78 0.15 82);
-  --primary-foreground: oklch(0.15 0.03 300);
-  --secondary: oklch(0.22 0.05 305);
-  --secondary-foreground: oklch(0.94 0.02 85);
-  --muted: oklch(0.19 0.03 300);
-  --muted-foreground: oklch(0.68 0.03 85);
-  --accent: oklch(0.28 0.08 320);
-  --accent-foreground: oklch(0.94 0.02 85);
-  --destructive: oklch(0.62 0.22 25);
+  /* Clean black & white */
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.15 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.15 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.15 0 0);
+  --primary: oklch(0.15 0 0);
+  --primary-foreground: oklch(1 0 0);
+  --secondary: oklch(0.96 0 0);
+  --secondary-foreground: oklch(0.15 0 0);
+  --muted: oklch(0.96 0 0);
+  --muted-foreground: oklch(0.45 0 0);
+  --accent: oklch(0.94 0 0);
+  --accent-foreground: oklch(0.15 0 0);
+  --destructive: oklch(0.55 0.20 25);
   --destructive-foreground: oklch(0.98 0 0);
-  --border: oklch(0.28 0.04 305 / 0.6);
-  --input: oklch(0.22 0.04 305);
-  --ring: oklch(0.78 0.15 82);
+  --border: oklch(0.88 0 0);
+  --input: oklch(0.98 0 0);
+  --ring: oklch(0.15 0 0);
 
-  --gold: oklch(0.82 0.15 85);
-  --gold-muted: oklch(0.62 0.12 82);
-  --ink: oklch(0.94 0.02 85);
-  --parchment: oklch(0.96 0.03 85);
+  /* "gold" tokens repurposed as black/ink for compatibility with existing classes */
+  --gold: oklch(0.15 0 0);
+  --gold-muted: oklch(0.45 0 0);
+  --ink: oklch(0.15 0 0);
+  --parchment: oklch(0.15 0 0);
 }
 
 .dark {
-  --background: oklch(0.11 0.02 300);
-  --foreground: oklch(0.94 0.02 85);
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.15 0 0);
 }
 
 @layer base {
@@ -83,28 +84,40 @@
   html { direction: rtl; }
   html[lang="en"] { direction: ltr; }
   body {
-    background: radial-gradient(ellipse at top, oklch(0.16 0.06 320) 0%, oklch(0.09 0.02 300) 60%);
-    background-attachment: fixed;
+    background: var(--color-background);
     color: var(--color-foreground);
     font-family: var(--font-nastaliq);
     min-height: 100vh;
   }
   .font-ltr { direction: ltr; font-family: var(--font-sans); }
-  .urdu { font-family: var(--font-nastaliq); line-height: 2.4; }
-  .urdu-lg { font-family: var(--font-nastaliq); line-height: 2.6; font-size: 1.5rem; }
-  .urdu-hero { font-family: var(--font-nastaliq); line-height: 2.8; font-size: 2rem; }
+  /* Responsive Urdu type — fluid across mobile → desktop */
+  .urdu {
+    font-family: var(--font-nastaliq);
+    line-height: 2.2;
+    font-size: clamp(0.95rem, 0.85rem + 0.5vw, 1.1rem);
+  }
+  .urdu-lg {
+    font-family: var(--font-nastaliq);
+    line-height: 2.4;
+    font-size: clamp(1.15rem, 1rem + 1vw, 1.5rem);
+  }
+  .urdu-hero {
+    font-family: var(--font-nastaliq);
+    line-height: 2.6;
+    font-size: clamp(1.6rem, 1.2rem + 3vw, 2.5rem);
+  }
 
-  ::selection { background: var(--gold); color: var(--primary-foreground); }
+  ::selection { background: var(--foreground); color: var(--background); }
 }
 
 @utility card-royal {
-  background: linear-gradient(180deg, oklch(0.18 0.04 305) 0%, oklch(0.14 0.03 300) 100%);
-  border: 1px solid oklch(0.35 0.06 305 / 0.4);
+  background: var(--card);
+  border: 1px solid var(--border);
   box-shadow: var(--shadow-elevated);
 }
 
 @utility text-gold {
-  color: var(--gold);
+  color: var(--foreground);
 }
 
 @utility bg-gold-gradient {
@@ -113,5 +126,5 @@
 }
 
 @utility border-gold {
-  border-color: var(--gold-muted);
+  border-color: var(--border);
 }
