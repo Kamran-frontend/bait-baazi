@@ -120,49 +120,81 @@ function AdminPage() {
         <p className="font-ltr text-sm text-muted-foreground">Manage the poetry library</p>
       </header>
 
-      {/* PDF Upload + AI/OCR extraction */}
+      {/* Image / screenshot extraction (AI + OCR) */}
       <section className="card-royal rounded-2xl p-4 sm:p-6">
         <div className="flex items-start gap-3 mb-3">
-          <FileUp className="h-5 w-5 text-gold shrink-0 mt-0.5" />
+          <ImagePlus className="h-5 w-5 shrink-0 mt-0.5" />
           <div className="min-w-0">
-            <h2 className="urdu text-lg sm:text-xl text-gold">PDF اپلوڈ کریں (AI + OCR)</h2>
-            <p className="font-ltr text-xs sm:text-sm text-muted-foreground">Upload a PDF (scanned or text). Gemini reads every page — Urdu, Arabic, Farsi, with diacritics — and extracts each shair.</p>
+            <h2 className="urdu text-lg sm:text-xl">تصویر یا اسکرین شاٹ سے اشعار</h2>
+            <p className="font-ltr text-xs sm:text-sm text-muted-foreground">Upload photos of book pages, or paste a screenshot (Ctrl/Cmd + V). AI reads every image and extracts each shair — preserves diacritics, distinguishes ں / ن and ے / ی.</p>
           </div>
         </div>
         <div className="grid gap-3">
+          <div
+            onPaste={e => {
+              const files: File[] = [];
+              for (const item of Array.from(e.clipboardData.items)) {
+                if (item.type.startsWith("image/")) {
+                  const f = item.getAsFile(); if (f) files.push(f);
+                }
+              }
+              if (files.length) setImgFiles(prev => [...prev, ...files]);
+            }}
+            className="rounded-lg border border-dashed border-border p-4 text-center text-sm text-muted-foreground focus:outline-none focus:border-foreground"
+            tabIndex={0}
+          >
+            Paste a screenshot here (Ctrl/Cmd + V) or choose files below
+          </div>
           <input
-            type="file" accept="application/pdf"
-            onChange={e => setPdfFile(e.target.files?.[0] ?? null)}
+            type="file" accept="image/*" multiple
+            onChange={e => setImgFiles(Array.from(e.target.files ?? []))}
             className="font-ltr text-sm file:me-3 file:px-3 file:py-2 file:rounded-md file:border-0 file:bg-gold-gradient file:font-semibold file:cursor-pointer"
           />
+          {imgFiles.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {imgFiles.map((f, i) => (
+                <div key={i} className="relative">
+                  <img src={URL.createObjectURL(f)} alt="" className="h-20 w-20 object-cover rounded-md border border-border" />
+                  <button onClick={() => setImgFiles(prev => prev.filter((_, j) => j !== i))}
+                    className="absolute -top-2 -right-2 bg-foreground text-background rounded-full p-0.5" aria-label="Remove">
+                    <X className="h-3 w-3" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <input dir="rtl" value={pdfPoet} onChange={e => setPdfPoet(e.target.value)} placeholder="شاعر (اختیاری)"
-              className="urdu rounded-lg bg-input border border-gold/20 p-2.5 focus:border-gold focus:outline-none" />
-            <input dir="rtl" value={pdfBook} onChange={e => setPdfBook(e.target.value)} placeholder="کتاب کا نام (اختیاری)"
-              className="urdu rounded-lg bg-input border border-gold/20 p-2.5 focus:border-gold focus:outline-none" />
+            <input dir="rtl" value={imgPoet} onChange={e => setImgPoet(e.target.value)} placeholder="شاعر (اختیاری)"
+              className="urdu rounded-lg bg-input border border-border p-2.5 focus:border-foreground focus:outline-none" />
+            <input dir="rtl" value={imgBook} onChange={e => setImgBook(e.target.value)} placeholder="کتاب (اختیاری)"
+              className="urdu rounded-lg bg-input border border-border p-2.5 focus:border-foreground focus:outline-none" />
           </div>
           <button
-            disabled={!pdfFile || pdfBusy}
+            disabled={imgFiles.length === 0 || imgBusy}
             onClick={async () => {
-              if (!pdfFile) return;
-              setPdfBusy(true); setPdfStatus("Reading file…");
+              if (imgFiles.length === 0) return;
+              setImgBusy(true); setImgStatus("Reading images…");
               try {
-                const base64 = await readFileAsBase64(pdfFile);
-                setPdfStatus("Sending to AI — this may take a minute for large books…");
-                const r = await pdfFn({ data: { filename: pdfFile.name, base64, poet_name: pdfPoet, book_title: pdfBook } });
-                setPdfStatus(`✅ Extracted ${r.inserted} shair (${r.duplicates} duplicates skipped).`);
-                setPdfFile(null); qc.invalidateQueries();
+                const images = await Promise.all(imgFiles.map(async f => ({
+                  mime: f.type || "image/png",
+                  base64: await readFileAsBase64(f),
+                })));
+                setImgStatus("Sending to AI — this may take a moment…");
+                const r = await imgFn({ data: { images, poet_name: imgPoet, book_title: imgBook } });
+                setImgStatus(`✅ Extracted ${r.inserted} shair (${r.duplicates} duplicates skipped).`);
+                setImgFiles([]); qc.invalidateQueries();
               } catch (e) {
-                setPdfStatus(`❌ ${e instanceof Error ? e.message : "Failed"}`);
-              } finally { setPdfBusy(false); }
+                setImgStatus(`❌ ${e instanceof Error ? e.message : "Failed"}`);
+              } finally { setImgBusy(false); }
             }}
             className="bg-gold-gradient rounded-lg px-5 py-2.5 font-ltr font-semibold inline-flex items-center gap-2 disabled:opacity-50 w-full sm:w-auto">
-            {pdfBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileUp className="h-4 w-4" />}
-            Upload & Extract
+            {imgBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <ImagePlus className="h-4 w-4" />}
+            Extract shair
           </button>
-          {pdfStatus && <p className="font-ltr text-sm break-words">{pdfStatus}</p>}
+          {imgStatus && <p className="font-ltr text-sm break-words">{imgStatus}</p>}
         </div>
       </section>
+
 
       {/* Manual add */}
       <section className="card-royal rounded-2xl p-4 sm:p-6">
