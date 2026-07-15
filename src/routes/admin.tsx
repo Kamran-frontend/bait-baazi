@@ -54,11 +54,11 @@ function AdminPage() {
   const [batchBusy, setBatchBusy] = useState(false);
   const [batchResult, setBatchResult] = useState<string>("");
 
-  const [pdfPoet, setPdfPoet] = useState("");
-  const [pdfBook, setPdfBook] = useState("");
-  const [pdfBusy, setPdfBusy] = useState(false);
-  const [pdfStatus, setPdfStatus] = useState<string>("");
-  const [pdfFile, setPdfFile] = useState<File | null>(null);
+  const [imgPoet, setImgPoet] = useState("");
+  const [imgBook, setImgBook] = useState("");
+  const [imgBusy, setImgBusy] = useState(false);
+  const [imgStatus, setImgStatus] = useState<string>("");
+  const [imgFiles, setImgFiles] = useState<File[]>([]);
 
   const [reclassBusy, setReclassBusy] = useState(false);
   const [reclassResult, setReclassResult] = useState<string>("");
