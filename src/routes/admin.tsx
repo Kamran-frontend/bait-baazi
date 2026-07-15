@@ -4,11 +4,12 @@ import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import {
   claimAdmin, myRole, addShair, editShair, extractShairFromText,
-  deleteShair, uploadAndExtractPdf, reclassifyAllShair,
+  deleteShair, extractShairFromImages, reclassifyAllShair,
   listOpenFlags, resolveFlag,
+  listUsers, setUserRole, setUserBanned, deleteUser,
 } from "@/lib/admin.functions";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { CheckCircle2, FileUp, Flag, Loader2, Pencil, RefreshCw, Shield, Sparkles, Trash2, X } from "lucide-react";
+import { Ban, CheckCircle2, Flag, ImagePlus, Loader2, Pencil, RefreshCw, Shield, ShieldCheck, Sparkles, Trash2, UserX, X } from "lucide-react";
 
 export const Route = createFileRoute("/admin")({
   ssr: false,
