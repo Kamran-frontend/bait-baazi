@@ -306,6 +306,77 @@ function AdminPage() {
         )}
       </section>
 
+      {/* Users */}
+      <section className="card-royal rounded-2xl p-4 sm:p-6">
+        <h2 className="urdu text-lg sm:text-xl mb-3 inline-flex items-center gap-2"><ShieldCheck className="h-4 w-4" /> صارفین</h2>
+        {users.isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : (
+          <div className="overflow-x-auto -mx-2 sm:mx-0">
+            <table className="w-full min-w-[560px] text-sm font-ltr">
+              <thead>
+                <tr className="text-start text-xs text-muted-foreground border-b border-border">
+                  <th className="text-start py-2 px-2">Email</th>
+                  <th className="text-start py-2 px-2">Roles</th>
+                  <th className="text-start py-2 px-2">Last sign-in</th>
+                  <th className="text-start py-2 px-2">Favs</th>
+                  <th className="text-end py-2 px-2">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(users.data ?? []).map(u => {
+                  const isAdminU = u.roles.includes("admin");
+                  const isBanned = !!u.banned_until && new Date(u.banned_until).getTime() > Date.now();
+                  return (
+                    <tr key={u.id} className="border-b border-border/50">
+                      <td className="py-2 px-2 break-all">
+                        {u.email ?? <span className="text-muted-foreground">—</span>}
+                        {isBanned && <span className="ms-2 text-[10px] px-1.5 py-0.5 rounded-full bg-destructive/15 text-destructive">banned</span>}
+                      </td>
+                      <td className="py-2 px-2">
+                        {u.roles.length ? u.roles.map(r => (
+                          <span key={r} className="me-1 text-[10px] px-1.5 py-0.5 rounded-full bg-accent">{r}</span>
+                        )) : <span className="text-muted-foreground text-xs">user</span>}
+                      </td>
+                      <td className="py-2 px-2 text-xs text-muted-foreground">
+                        {u.last_sign_in_at ? new Date(u.last_sign_in_at).toLocaleDateString() : "—"}
+                      </td>
+                      <td className="py-2 px-2">{u.favorite_count}</td>
+                      <td className="py-2 px-2 text-end">
+                        <div className="inline-flex items-center gap-1">
+                          <button
+                            onClick={async () => { await setRoleFn({ data: { user_id: u.id, role: "admin", grant: !isAdminU } }); users.refetch(); }}
+                            className={`text-[11px] px-2 py-1 rounded-md border border-border inline-flex items-center gap-1 hover:bg-accent`}
+                            title={isAdminU ? "Revoke admin" : "Grant admin"}
+                          >
+                            <ShieldCheck className="h-3 w-3" /> {isAdminU ? "Revoke" : "Admin"}
+                          </button>
+                          <button
+                            onClick={async () => { await setBannedFn({ data: { user_id: u.id, banned: !isBanned } }); users.refetch(); }}
+                            className="text-[11px] px-2 py-1 rounded-md border border-border inline-flex items-center gap-1 hover:bg-accent"
+                            title={isBanned ? "Unban" : "Ban"}
+                          >
+                            <Ban className="h-3 w-3" /> {isBanned ? "Unban" : "Ban"}
+                          </button>
+                          <button
+                            onClick={async () => {
+                              if (!confirm(`Permanently delete ${u.email ?? "this user"}?`)) return;
+                              await deleteUserFn({ data: { user_id: u.id } }); users.refetch();
+                            }}
+                            className="text-[11px] px-2 py-1 rounded-md border border-destructive/40 text-destructive inline-flex items-center gap-1 hover:bg-destructive/10"
+                            title="Delete user"
+                          >
+                            <UserX className="h-3 w-3" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+
       {/* Recent */}
       <section className="card-royal rounded-2xl p-4 sm:p-6">
         <h2 className="urdu text-lg sm:text-xl text-gold mb-3">تازہ اشعار</h2>
