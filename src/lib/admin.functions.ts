@@ -338,3 +338,93 @@ export const resolveFlag = createServerFn({ method: "POST" })
     await supabaseAdmin.from("shair_flags").update({ status: "resolved" }).eq("id", data.id);
     return { ok: true };
   });
+
+/** Admin: list all users with role + favorite count. */
+export const listUsers = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: authList, error } = await supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 200 });
+    if (error) throw new Error(error.message);
+    const users = authList.users;
+    const ids = users.map(u => u.id);
+    const [{ data: roles }, { data: favs }] = await Promise.all([
+      supabaseAdmin.from("user_roles").select("user_id, role").in("user_id", ids),
+      supabaseAdmin.from("favorites").select("user_id").in("user_id", ids),
+    ]);
+    const roleMap = new Map<string, string[]>();
+    for (const r of roles ?? []) {
+      const arr = roleMap.get(r.user_id) ?? [];
+      arr.push(r.role as string); roleMap.set(r.user_id, arr);
+    }
+    const favCount = new Map<string, number>();
+    for (const f of favs ?? []) favCount.set(f.user_id, (favCount.get(f.user_id) ?? 0) + 1);
+    return users.map(u => ({
+      id: u.id,
+      email: u.email ?? null,
+      created_at: u.created_at,
+      last_sign_in_at: u.last_sign_in_at ?? null,
+      banned_until: (u as unknown as { banned_until?: string | null }).banned_until ?? null,
+      roles: roleMap.get(u.id) ?? [],
+      favorite_count: favCount.get(u.id) ?? 0,
+    }));
+  });
+
+/** Admin: grant or revoke a role for a user. */
+export const setUserRole = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({
+    user_id: z.string().uuid(),
+    role: z.enum(["admin", "moderator", "user"]),
+    grant: z.boolean(),
+  }).parse(d))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    // Prevent removing your own last admin role by mistake
+    if (!data.grant && data.role === "admin" && data.user_id === context.userId) {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const { count } = await supabaseAdmin.from("user_roles").select("id", { count: "exact", head: true }).eq("role", "admin");
+      if ((count ?? 0) <= 1) throw new Error("Cannot remove the only admin");
+    }
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    if (data.grant) {
+      const { error } = await supabaseAdmin.from("user_roles").upsert({ user_id: data.user_id, role: data.role }, { onConflict: "user_id,role" });
+      if (error) throw new Error(error.message);
+    } else {
+      const { error } = await supabaseAdmin.from("user_roles").delete().eq("user_id", data.user_id).eq("role", data.role);
+      if (error) throw new Error(error.message);
+    }
+    return { ok: true };
+  });
+
+/** Admin: ban or unban a user (blocks sign-in). */
+export const setUserBanned = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({
+    user_id: z.string().uuid(),
+    banned: z.boolean(),
+  }).parse(d))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    if (data.user_id === context.userId) throw new Error("Cannot ban yourself");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin.auth.admin.updateUserById(data.user_id, {
+      ban_duration: data.banned ? "876000h" : "none",
+    });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+/** Admin: delete a user account entirely. */
+export const deleteUser = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ user_id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    if (data.user_id === context.userId) throw new Error("Cannot delete yourself");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin.auth.admin.deleteUser(data.user_id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
