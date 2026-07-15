@@ -3,7 +3,8 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { shairStatsQuery, shairByStartLetterQuery } from "@/lib/queries";
 import { URDU_LETTERS } from "@/lib/urdu";
 import { ShairCard, LetterChip } from "@/components/shair-card";
-import { BookOpen, GraduationCap, Search, Swords, Sparkles, Trophy } from "lucide-react";
+import { BookOpen, GraduationCap, Search, Swords } from "lucide-react";
+import logoAsset from "@/assets/bait-baazi-logo.png.asset.json";
 
 export const Route = createFileRoute("/")({
   loader: async ({ context }) => {
@@ -29,32 +30,24 @@ function Home() {
   return (
     <div className="space-y-10">
       {/* Hero */}
-      <section className="text-center py-8 sm:py-12">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-gold/30 text-gold text-xs font-ltr mb-4">
-          <Sparkles className="h-3 w-3" /> AI-Powered • Classical Urdu Poetry
-        </div>
-        <h1 className="urdu text-4xl sm:text-6xl text-gold mb-3">بیت بازی</h1>
-        <p className="urdu text-lg sm:text-2xl text-parchment/90 max-w-2xl mx-auto">
-          کلاسیکی اردو شاعری کا سب سے بڑا خزانہ — ہر حرف پر شعر، ہر شعر پر جواب
-        </p>
-        <div className="mt-6 flex flex-wrap justify-center gap-2 sm:gap-3">
-          <Link to="/play" className="bg-gold-gradient rounded-lg px-4 sm:px-6 py-2.5 sm:py-3 font-ltr text-sm sm:text-base font-semibold inline-flex items-center gap-2 shadow-[var(--shadow-gold)] hover:opacity-90">
+      <section className="text-center py-6 sm:py-10">
+        <img src={logoAsset.url} alt="Bait Baazi" className="mx-auto h-20 sm:h-32 w-auto mb-6" />
+        <div className="flex flex-wrap justify-center gap-2 sm:gap-3">
+          <Link to="/play" className="bg-gold-gradient rounded-lg px-4 sm:px-6 py-2.5 sm:py-3 font-ltr text-sm sm:text-base font-semibold inline-flex items-center gap-2 hover:opacity-90">
             <Swords className="h-4 w-4" /> Play
           </Link>
-          <Link to="/tournament" className="bg-gold-gradient rounded-lg px-4 sm:px-6 py-2.5 sm:py-3 font-ltr text-sm sm:text-base font-semibold inline-flex items-center gap-2 shadow-[var(--shadow-gold)] hover:opacity-90">
-            <Trophy className="h-4 w-4" /> Tournament
-          </Link>
-          <Link to="/practice" className="border border-gold/40 text-gold rounded-lg px-4 sm:px-6 py-2.5 sm:py-3 font-ltr text-sm sm:text-base font-semibold inline-flex items-center gap-2 hover:bg-gold/10">
+          <Link to="/practice" className="border border-border text-foreground rounded-lg px-4 sm:px-6 py-2.5 sm:py-3 font-ltr text-sm sm:text-base font-semibold inline-flex items-center gap-2 hover:bg-accent">
             <GraduationCap className="h-4 w-4" /> Practice
           </Link>
-          <Link to="/browse" className="border border-gold/40 text-gold rounded-lg px-4 sm:px-6 py-2.5 sm:py-3 font-ltr text-sm sm:text-base font-semibold inline-flex items-center gap-2 hover:bg-gold/10">
+          <Link to="/browse" className="border border-border text-foreground rounded-lg px-4 sm:px-6 py-2.5 sm:py-3 font-ltr text-sm sm:text-base font-semibold inline-flex items-center gap-2 hover:bg-accent">
             <BookOpen className="h-4 w-4" /> Browse
           </Link>
-          <Link to="/search" className="border border-gold/20 text-parchment/90 rounded-lg px-4 sm:px-6 py-2.5 sm:py-3 font-ltr text-sm sm:text-base font-semibold inline-flex items-center gap-2 hover:bg-accent/50">
+          <Link to="/search" className="border border-border text-foreground rounded-lg px-4 sm:px-6 py-2.5 sm:py-3 font-ltr text-sm sm:text-base font-semibold inline-flex items-center gap-2 hover:bg-accent">
             <Search className="h-4 w-4" /> Search
           </Link>
         </div>
       </section>
+
 
       {/* Stats */}
       <section className="grid grid-cols-2 sm:grid-cols-4 gap-3">
