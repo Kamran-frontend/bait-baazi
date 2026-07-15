@@ -376,7 +376,7 @@ export const setUserRole = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({
     user_id: z.string().uuid(),
-    role: z.enum(["admin", "moderator", "user"]),
+    role: z.enum(["admin", "user"]),
     grant: z.boolean(),
   }).parse(d))
   .handler(async ({ data, context }) => {
