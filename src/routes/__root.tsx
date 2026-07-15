@@ -122,14 +122,11 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <div className="dark min-h-screen">
+      <div className="min-h-screen">
         <SiteHeader />
-        <main className="mx-auto max-w-6xl px-4 py-6">
+        <main className="mx-auto max-w-6xl px-3 sm:px-4 py-4 sm:py-6">
           <Outlet />
         </main>
-        <footer className="mx-auto max-w-6xl px-4 py-8 text-center text-xs text-muted-foreground">
-          <span className="urdu">بیت بازی — کلاسیکی اردو شاعری کا سب سے بڑا خزانہ</span>
-        </footer>
       </div>
     </QueryClientProvider>
   );
