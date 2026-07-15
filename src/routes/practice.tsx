@@ -2,8 +2,9 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { getRandomShair } from "@/lib/ai.functions";
-import { getEndLetter, getStartLetter, isUrduLetter } from "@/lib/urdu";
-import { Eye, Loader2, RotateCcw, SkipForward, Sparkles, Target } from "lucide-react";
+import { getStartLetter, isUrduLetter } from "@/lib/urdu";
+import { useVoiceInput } from "@/hooks/use-voice-input";
+import { Check, Eye, Loader2, Mic, MicOff, RotateCcw, SkipForward, Target, XCircle } from "lucide-react";
 
 export const Route = createFileRoute("/practice")({
   head: () => ({
