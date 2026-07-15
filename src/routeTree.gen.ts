@@ -9,7 +9,6 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as TournamentRouteImport } from './routes/tournament'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as SearchRouteImport } from './routes/search'
 import { Route as PracticeRouteImport } from './routes/practice'
@@ -21,11 +20,6 @@ import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as LetterModeLetterRouteImport } from './routes/letter.$mode.$letter'
 
-const TournamentRoute = TournamentRouteImport.update({
-  id: '/tournament',
-  path: '/tournament',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
   path: '/sitemap.xml',
@@ -87,7 +81,6 @@ export interface FileRoutesByFullPath {
   '/practice': typeof PracticeRoute
   '/search': typeof SearchRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
-  '/tournament': typeof TournamentRoute
   '/letter/$mode/$letter': typeof LetterModeLetterRoute
 }
 export interface FileRoutesByTo {
@@ -100,7 +93,6 @@ export interface FileRoutesByTo {
   '/practice': typeof PracticeRoute
   '/search': typeof SearchRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
-  '/tournament': typeof TournamentRoute
   '/letter/$mode/$letter': typeof LetterModeLetterRoute
 }
 export interface FileRoutesById {
@@ -114,7 +106,6 @@ export interface FileRoutesById {
   '/practice': typeof PracticeRoute
   '/search': typeof SearchRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
-  '/tournament': typeof TournamentRoute
   '/letter/$mode/$letter': typeof LetterModeLetterRoute
 }
 export interface FileRouteTypes {
@@ -129,7 +120,6 @@ export interface FileRouteTypes {
     | '/practice'
     | '/search'
     | '/sitemap.xml'
-    | '/tournament'
     | '/letter/$mode/$letter'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -142,7 +132,6 @@ export interface FileRouteTypes {
     | '/practice'
     | '/search'
     | '/sitemap.xml'
-    | '/tournament'
     | '/letter/$mode/$letter'
   id:
     | '__root__'
@@ -155,7 +144,6 @@ export interface FileRouteTypes {
     | '/practice'
     | '/search'
     | '/sitemap.xml'
-    | '/tournament'
     | '/letter/$mode/$letter'
   fileRoutesById: FileRoutesById
 }
@@ -169,19 +157,11 @@ export interface RootRouteChildren {
   PracticeRoute: typeof PracticeRoute
   SearchRoute: typeof SearchRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
-  TournamentRoute: typeof TournamentRoute
   LetterModeLetterRoute: typeof LetterModeLetterRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/tournament': {
-      id: '/tournament'
-      path: '/tournament'
-      fullPath: '/tournament'
-      preLoaderRoute: typeof TournamentRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/sitemap.xml': {
       id: '/sitemap.xml'
       path: '/sitemap.xml'
@@ -265,7 +245,6 @@ const rootRouteChildren: RootRouteChildren = {
   PracticeRoute: PracticeRoute,
   SearchRoute: SearchRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
-  TournamentRoute: TournamentRoute,
   LetterModeLetterRoute: LetterModeLetterRoute,
 }
 export const routeTree = rootRouteImport
