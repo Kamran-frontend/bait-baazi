@@ -3,13 +3,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import {
-  claimAdmin, myRole, addShair, editShair, extractShairFromText,
+  myRole, addShair, editShair, extractShairFromText,
   deleteShair, extractShairFromImages, reclassifyAllShair,
   listOpenFlags, resolveFlag,
   listUsers, setUserRole, setUserBanned, deleteUser,
+  listInquiries, setInquiryStatus,
 } from "@/lib/admin.functions";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Ban, CheckCircle2, Flag, ImagePlus, Loader2, Pencil, RefreshCw, Shield, ShieldCheck, Sparkles, Trash2, UserX, X } from "lucide-react";
+import { Ban, CheckCircle2, Flag, ImagePlus, Inbox, Loader2, Mail, Pencil, RefreshCw, Shield, ShieldCheck, Sparkles, Trash2, UserX, X } from "lucide-react";
 
 export const Route = createFileRoute("/admin")({
   ssr: false,
