@@ -1,98 +1,106 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { shairSearchQuery, type Shair } from "@/lib/queries";
+import { supabase } from "@/integrations/supabase/client";
+import { type Shair } from "@/lib/queries";
 import { aiSearch } from "@/lib/ai.functions";
 import { ShairCard } from "@/components/shair-card";
 import { useState } from "react";
-import { Loader2, Mic, MicOff, Search as SearchIcon, Sparkles } from "lucide-react";
+import { Loader2, Mic, MicOff, Search as SearchIcon } from "lucide-react";
 import { useVoiceInput } from "@/hooks/use-voice-input";
 
 export const Route = createFileRoute("/search")({
   head: () => ({
     meta: [
       { title: "تلاش — Search Urdu Poetry | Bait Baazi" },
-      { name: "description", content: "Search Urdu shair by word, poet, or line — voice search and AI-powered Roman-Urdu search included." },
+      { name: "description", content: "Search Urdu shair by word, poet or line — type in Urdu or Roman Urdu, voice search included." },
     ],
   }),
   component: SearchPage,
 });
 
+const shairSelect = `
+  id, text_urdu, poet_id, book_id, page_number, start_letter, end_letter,
+  category, difficulty, popularity, is_attack, source,
+  poet:poets(name_urdu, name_english),
+  book:books(title_urdu)
+`;
+
+// Detects Arabic/Urdu script — anything else routes through AI transliteration too.
+const hasUrduScript = (s: string) => /[\u0600-\u06FF\u0750-\u077F\uFB50-\uFDFF\uFE70-\uFEFF]/.test(s);
+
 function SearchPage() {
   const [q, setQ] = useState("");
   const [applied, setApplied] = useState("");
-  const [aiMode, setAiMode] = useState(false);
-  const [aiResults, setAiResults] = useState<Shair[] | null>(null);
-  const [aiLoading, setAiLoading] = useState(false);
-  const [aiKeywords, setAiKeywords] = useState<string[]>([]);
-  const [aiError, setAiError] = useState<string | null>(null);
+  const [results, setResults] = useState<Shair[]>([]);
+  const [busy, setBusy] = useState(false);
+  const [keywords, setKeywords] = useState<string[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
   const runAi = useServerFn(aiSearch);
-  const { data: plainData = [], isFetching } = useQuery({ ...shairSearchQuery(applied), enabled: !!applied && !aiMode });
 
   const voice = useVoiceInput({
-    lang: aiMode ? "en-US" : "ur-PK",
+    // Web Speech: accept either Urdu or English utterances.
+    lang: "ur-PK",
     onFinal: (text) => { setQ(text); go(text); },
   });
 
   const go = async (text?: string) => {
     const query = (text ?? q).trim();
     if (!query) return;
-    setApplied(query);
-    if (aiMode) {
-      setAiLoading(true); setAiError(null); setAiResults(null); setAiKeywords([]);
-      try {
-        const res = await runAi({ data: { query } });
-        setAiKeywords(res.keywords);
-        setAiResults(res.results as Shair[]);
-      } catch (e) {
-        setAiError(e instanceof Error ? e.message : "AI search failed");
-      } finally {
-        setAiLoading(false);
+    setApplied(query); setBusy(true); setError(null); setKeywords([]);
+    const merged = new Map<string, Shair>();
+    try {
+      // 1. Direct match — instant if user typed Urdu.
+      const { data: direct } = await supabase.from("shair").select(shairSelect)
+        .ilike("text_urdu", `%${query}%`).order("popularity", { ascending: false }).limit(60);
+      for (const r of (direct ?? []) as unknown as Shair[]) merged.set(r.id, r);
+
+      // 2. Always run AI expansion so Roman-Urdu / English / mixed queries also match.
+      //    Skip only when the query is pure Urdu AND we already have plenty of hits.
+      const shouldAi = !hasUrduScript(query) || merged.size < 5;
+      if (shouldAi) {
+        try {
+          const res = await runAi({ data: { query } });
+          setKeywords(res.keywords ?? []);
+          for (const r of (res.results ?? []) as Shair[]) merged.set(r.id, r);
+        } catch (e) {
+          // AI failure doesn't kill the plain results.
+          if (merged.size === 0) setError(e instanceof Error ? e.message : "AI search failed");
+        }
       }
+      setResults(Array.from(merged.values()));
+    } finally {
+      setBusy(false);
     }
   };
-
-  const results = aiMode ? (aiResults ?? []) : plainData;
-  const busy = aiMode ? aiLoading : isFetching;
 
   return (
     <div className="space-y-5">
       <header className="text-center">
-        <h1 className="urdu text-2xl sm:text-3xl text-gold mb-2">تلاش</h1>
-        <p className="urdu text-sm sm:text-base text-muted-foreground">لفظ، شاعر، یا مصرع تلاش کریں</p>
+        <h1 className="urdu text-2xl sm:text-3xl mb-2">تلاش</h1>
+        <p className="font-ltr text-xs sm:text-sm text-muted-foreground">Type in Urdu or Roman Urdu — e.g. <em>محبت</em>, <em>mohabbat</em>, <em>ghalib</em></p>
       </header>
-
-      {/* Mode toggle */}
-      <div className="flex justify-center gap-2 text-xs font-ltr">
-        <button onClick={() => setAiMode(false)} className={`px-3 py-1.5 rounded-full border ${!aiMode ? "bg-gold-gradient text-primary-foreground border-transparent" : "border-gold/30 text-gold"}`}>
-          Urdu text
-        </button>
-        <button onClick={() => setAiMode(true)} className={`px-3 py-1.5 rounded-full border inline-flex items-center gap-1 ${aiMode ? "bg-gold-gradient text-primary-foreground border-transparent" : "border-gold/30 text-gold"}`}>
-          <Sparkles className="h-3 w-3" /> AI · Roman Urdu
-        </button>
-      </div>
 
       <form onSubmit={e => { e.preventDefault(); go(); }} className="max-w-2xl mx-auto">
         <div className="flex gap-2 items-stretch">
           <input
             value={q} onChange={e => setQ(e.target.value)}
-            placeholder={aiMode ? "e.g. dil, mohabbat, ghalib…" : "مثلاً: دل، محبت…"}
-            dir={aiMode ? "ltr" : "rtl"}
-            className={`${aiMode ? "font-ltr" : "urdu"} flex-1 min-w-0 rounded-lg bg-input border border-gold/20 px-3 sm:px-4 py-3 text-base sm:text-xl text-parchment focus:border-gold focus:outline-none`}
+            placeholder="dil, mohabbat, غالب…"
+            dir="auto"
+            className="flex-1 min-w-0 rounded-lg bg-input border border-border px-3 sm:px-4 py-3 text-base sm:text-lg focus:border-foreground focus:outline-none"
           />
           {voice.supported && (
             <button
               type="button"
               onClick={voice.listening ? voice.stop : voice.start}
               aria-label="Voice search"
-              className={`shrink-0 rounded-lg px-3 py-3 border ${voice.listening ? "bg-destructive/20 border-destructive text-destructive animate-pulse" : "border-gold/40 text-gold"}`}
+              className={`shrink-0 rounded-lg px-3 py-3 border ${voice.listening ? "bg-destructive/20 border-destructive text-destructive animate-pulse" : "border-border"}`}
             >
               {voice.listening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
             </button>
           )}
-          <button className="shrink-0 bg-gold-gradient rounded-lg px-3 sm:px-5 py-3 font-ltr font-semibold inline-flex items-center gap-2">
-            <SearchIcon className="h-4 w-4" /> <span className="hidden sm:inline">Go</span>
+          <button className="shrink-0 bg-foreground text-background rounded-lg px-3 sm:px-5 py-3 font-ltr font-semibold inline-flex items-center gap-2">
+            <SearchIcon className="h-4 w-4" /> <span className="hidden sm:inline">Search</span>
           </button>
         </div>
         {voice.listening && (
@@ -101,11 +109,11 @@ function SearchPage() {
         {voice.error && <p className="text-center mt-2 text-xs text-destructive font-ltr">{voice.error}</p>}
       </form>
 
-      {aiKeywords.length > 0 && (
+      {keywords.length > 0 && (
         <div className="max-w-2xl mx-auto flex flex-wrap gap-1.5 justify-center">
-          <span className="font-ltr text-xs text-muted-foreground">AI keywords:</span>
-          {aiKeywords.map(k => (
-            <span key={k} className="urdu text-sm px-2 py-0.5 rounded-full border border-gold/30 text-gold">{k}</span>
+          <span className="font-ltr text-xs text-muted-foreground">Matched:</span>
+          {keywords.map(k => (
+            <span key={k} className="urdu text-sm px-2 py-0.5 rounded-full border border-border">{k}</span>
           ))}
         </div>
       )}
@@ -119,7 +127,7 @@ function SearchPage() {
           )}
         </p>
       )}
-      {aiError && <p className="text-center text-sm text-destructive font-ltr">{aiError}</p>}
+      {error && <p className="text-center text-sm text-destructive font-ltr">{error}</p>}
 
       <div className="grid gap-3 sm:gap-4 md:grid-cols-2">
         {results.map(s => <ShairCard key={s.id} shair={s} />)}

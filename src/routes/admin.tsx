@@ -3,13 +3,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import {
-  claimAdmin, myRole, addShair, editShair, extractShairFromText,
+  myRole, addShair, editShair, extractShairFromText,
   deleteShair, extractShairFromImages, reclassifyAllShair,
   listOpenFlags, resolveFlag,
   listUsers, setUserRole, setUserBanned, deleteUser,
+  listInquiries, setInquiryStatus,
 } from "@/lib/admin.functions";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Ban, CheckCircle2, Flag, ImagePlus, Loader2, Pencil, RefreshCw, Shield, ShieldCheck, Sparkles, Trash2, UserX, X } from "lucide-react";
+import { Ban, CheckCircle2, Flag, ImagePlus, Inbox, Loader2, Mail, Pencil, RefreshCw, Shield, ShieldCheck, Sparkles, Trash2, UserX, X } from "lucide-react";
 
 export const Route = createFileRoute("/admin")({
   ssr: false,
@@ -25,7 +26,6 @@ type ShairRow = { id: string; text_urdu: string; start_letter: string; end_lette
 
 function AdminPage() {
   const askRole = useServerFn(myRole);
-  const askClaim = useServerFn(claimAdmin);
   const addFn = useServerFn(addShair);
   const editFn = useServerFn(editShair);
   const extractFn = useServerFn(extractShairFromText);
@@ -38,10 +38,11 @@ function AdminPage() {
   const setRoleFn = useServerFn(setUserRole);
   const setBannedFn = useServerFn(setUserBanned);
   const deleteUserFn = useServerFn(deleteUser);
+  const listInquiriesFn = useServerFn(listInquiries);
+  const setInquiryFn = useServerFn(setInquiryStatus);
   const qc = useQueryClient();
 
   const [role, setRole] = useState<string[] | null>(null);
-  const [claimStatus, setClaimStatus] = useState<string>("");
 
   const [manualText, setManualText] = useState("");
   const [manualPoet, setManualPoet] = useState("");
@@ -89,21 +90,20 @@ function AdminPage() {
     enabled: isAdmin,
   });
 
+  const inquiries = useQuery({
+    queryKey: ["admin", "inquiries"],
+    queryFn: () => listInquiriesFn(),
+    enabled: isAdmin,
+  });
+
   if (role === null) return <div className="text-center py-20"><Loader2 className="h-6 w-6 animate-spin mx-auto text-gold" /></div>;
 
   if (!isAdmin) {
     return (
       <div className="max-w-md mx-auto card-royal rounded-2xl p-6 sm:p-8 text-center">
         <Shield className="h-10 w-10 text-gold mx-auto mb-3" />
-        <h2 className="urdu text-2xl text-gold mb-2">ایڈمن اکاؤنٹ</h2>
-        <p className="font-ltr text-sm text-muted-foreground mb-4">You are signed in but not an admin. Claim admin (first user only):</p>
-        <button
-          onClick={async () => {
-            try { const r = await askClaim(); setClaimStatus(r.alreadyAdmin ? "Already admin" : "Admin granted!"); const rr = await askRole(); setRole(rr.roles); }
-            catch (e) { setClaimStatus(e instanceof Error ? e.message : "Failed"); }
-          }}
-          className="bg-gold-gradient rounded-lg px-5 py-2.5 font-ltr font-semibold">Claim admin</button>
-        {claimStatus && <p className="mt-3 text-sm font-ltr">{claimStatus}</p>}
+        <h2 className="urdu text-2xl text-gold mb-2">رسائی مسدود</h2>
+        <p className="font-ltr text-sm text-muted-foreground">This area is restricted to the site owner.</p>
       </div>
     );
   }
@@ -306,7 +306,42 @@ function AdminPage() {
         )}
       </section>
 
-      {/* Users */}
+      {/* Inquiries */}
+      <section className="card-royal rounded-2xl p-4 sm:p-6">
+        <h2 className="urdu text-lg sm:text-xl mb-3 inline-flex items-center gap-2"><Inbox className="h-4 w-4" /> رابطہ پیغامات</h2>
+        {inquiries.isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : (inquiries.data ?? []).length === 0 ? (
+          <p className="text-muted-foreground text-sm font-ltr">No inquiries yet.</p>
+        ) : (
+          <div className="space-y-3">
+            {(inquiries.data ?? []).map((i: any) => (
+              <div key={i.id} className={`border rounded-lg p-3 ${i.status === "resolved" ? "border-border/40 opacity-60" : "border-border"}`}>
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="font-ltr text-sm">
+                    <span className="font-semibold">{i.name}</span>
+                    <a href={`mailto:${i.email}`} className="ms-2 text-muted-foreground hover:text-foreground">&lt;{i.email}&gt;</a>
+                  </div>
+                  <div className="font-ltr text-[11px] text-muted-foreground">{new Date(i.created_at).toLocaleString()}</div>
+                </div>
+                {i.subject && <p className="font-ltr text-sm font-medium mt-1">{i.subject}</p>}
+                <p className="font-ltr text-sm mt-1 whitespace-pre-line break-words">{i.message}</p>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  <button
+                    onClick={async () => { await setInquiryFn({ data: { id: i.id, status: i.status === "resolved" ? "open" : "resolved" } }); inquiries.refetch(); }}
+                    className="font-ltr text-xs px-3 py-1.5 rounded-md border border-border inline-flex items-center gap-1 hover:bg-accent">
+                    <CheckCircle2 className="h-3.5 w-3.5" /> {i.status === "resolved" ? "Reopen" : "Mark resolved"}
+                  </button>
+                  <a href={`mailto:${i.email}?subject=Re: ${encodeURIComponent(i.subject ?? "Your inquiry")}`}
+                    className="font-ltr text-xs px-3 py-1.5 rounded-md border border-border inline-flex items-center gap-1 hover:bg-accent">
+                    <Mail className="h-3.5 w-3.5" /> Reply
+                  </a>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+
+
       <section className="card-royal rounded-2xl p-4 sm:p-6">
         <h2 className="urdu text-lg sm:text-xl mb-3 inline-flex items-center gap-2"><ShieldCheck className="h-4 w-4" /> صارفین</h2>
         {users.isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : (

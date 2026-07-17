@@ -122,12 +122,30 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <div className="min-h-screen">
+      <div className="min-h-screen flex flex-col">
         <SiteHeader />
-        <main className="mx-auto max-w-6xl px-3 sm:px-4 py-4 sm:py-6">
+        <main className="flex-1 mx-auto w-full max-w-6xl px-3 sm:px-4 py-4 sm:py-6">
           <Outlet />
         </main>
+        <SiteFooter />
       </div>
     </QueryClientProvider>
+  );
+}
+
+function SiteFooter() {
+  const year = new Date().getFullYear();
+  return (
+    <footer className="mt-8 border-t border-border bg-background/80">
+      <div className="mx-auto max-w-6xl px-3 sm:px-4 py-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs sm:text-sm text-muted-foreground">
+        <p className="font-ltr text-center sm:text-start">
+          © {year} Kamran Ali. All rights reserved.
+        </p>
+        <div className="font-ltr flex flex-wrap items-center justify-center gap-x-4 gap-y-1">
+          <Link to="/contact" className="hover:text-foreground">Contact</Link>
+          <a href="mailto:kamranali130893@gmail.com" className="hover:text-foreground">kamranali130893@gmail.com</a>
+        </div>
+      </div>
+    </footer>
   );
 }

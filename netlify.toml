@@ -1,0 +1,8 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+# Nitro's Netlify preset auto-activates when NETLIFY env is set,
+# so the TanStack Start build outputs a Netlify-ready function bundle.
+[build.environment]
+  NODE_VERSION = "20"
