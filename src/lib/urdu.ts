@@ -7,18 +7,20 @@
 //     particular, keep ں (noon ghunna) separate from ن, and keep ے (bari
 //     ye) separate from ی. Mixing them is wrong for gameplay.
 
-// Standard Urdu alphabet (38 letters).
+// Urdu alphabet for Bait Baazi classification. Per gameplay convention here,
+// ں (noon ghunna) is folded into ن and ے (bari ye) is folded into ی — so
+// neither appears as a distinct start/end letter.
 export const URDU_LETTERS = [
   "ا","ب","پ","ت","ٹ","ث","ج","چ","ح","خ",
   "د","ڈ","ذ","ر","ڑ","ز","ژ","س","ش","ص",
   "ض","ط","ظ","ع","غ","ف","ق","ک","گ","ل",
-  "م","ن","ں","و","ہ","ء","ی","ے",
+  "م","ن","و","ہ","ء","ی",
 ] as const;
 
 export type UrduLetter = typeof URDU_LETTERS[number];
 
 // Hard ending letters — force a difficult reply.
-export const ATTACK_LETTERS = ["ث","ذ","ژ","ض","ظ","غ","ء","ں"] as const;
+export const ATTACK_LETTERS = ["ث","ذ","ژ","ض","ظ","غ","ء"] as const;
 
 // Diacritics (stripped ONLY during letter detection).
 const DIACRITICS_RE = /[\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06ED\u08D3-\u08FF\uFE70-\uFE7F]/g;
