@@ -26,7 +26,6 @@ type ShairRow = { id: string; text_urdu: string; start_letter: string; end_lette
 
 function AdminPage() {
   const askRole = useServerFn(myRole);
-  const askClaim = useServerFn(claimAdmin);
   const addFn = useServerFn(addShair);
   const editFn = useServerFn(editShair);
   const extractFn = useServerFn(extractShairFromText);
@@ -39,10 +38,11 @@ function AdminPage() {
   const setRoleFn = useServerFn(setUserRole);
   const setBannedFn = useServerFn(setUserBanned);
   const deleteUserFn = useServerFn(deleteUser);
+  const listInquiriesFn = useServerFn(listInquiries);
+  const setInquiryFn = useServerFn(setInquiryStatus);
   const qc = useQueryClient();
 
   const [role, setRole] = useState<string[] | null>(null);
-  const [claimStatus, setClaimStatus] = useState<string>("");
 
   const [manualText, setManualText] = useState("");
   const [manualPoet, setManualPoet] = useState("");
