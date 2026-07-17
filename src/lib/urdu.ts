@@ -102,7 +102,7 @@ export function isAttackLetter(letter: string): boolean {
 
 export function letterDifficulty(letter: string): "آسان" | "درمیانہ" | "مشکل" {
   if (isAttackLetter(letter)) return "مشکل";
-  if (["ا","ب","د","م","ن","ی","ہ","ک","ل","و","ت","س","ر","ے"].includes(letter)) return "آسان";
+  if (["ا","ب","د","م","ن","ی","ہ","ک","ل","و","ت","س","ر"].includes(letter)) return "آسان";
   return "درمیانہ";
 }
 
