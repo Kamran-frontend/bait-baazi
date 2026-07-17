@@ -306,7 +306,42 @@ function AdminPage() {
         )}
       </section>
 
-      {/* Users */}
+      {/* Inquiries */}
+      <section className="card-royal rounded-2xl p-4 sm:p-6">
+        <h2 className="urdu text-lg sm:text-xl mb-3 inline-flex items-center gap-2"><Inbox className="h-4 w-4" /> رابطہ پیغامات</h2>
+        {inquiries.isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : (inquiries.data ?? []).length === 0 ? (
+          <p className="text-muted-foreground text-sm font-ltr">No inquiries yet.</p>
+        ) : (
+          <div className="space-y-3">
+            {(inquiries.data ?? []).map((i: any) => (
+              <div key={i.id} className={`border rounded-lg p-3 ${i.status === "resolved" ? "border-border/40 opacity-60" : "border-border"}`}>
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="font-ltr text-sm">
+                    <span className="font-semibold">{i.name}</span>
+                    <a href={`mailto:${i.email}`} className="ms-2 text-muted-foreground hover:text-foreground">&lt;{i.email}&gt;</a>
+                  </div>
+                  <div className="font-ltr text-[11px] text-muted-foreground">{new Date(i.created_at).toLocaleString()}</div>
+                </div>
+                {i.subject && <p className="font-ltr text-sm font-medium mt-1">{i.subject}</p>}
+                <p className="font-ltr text-sm mt-1 whitespace-pre-line break-words">{i.message}</p>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  <button
+                    onClick={async () => { await setInquiryFn({ data: { id: i.id, status: i.status === "resolved" ? "open" : "resolved" } }); inquiries.refetch(); }}
+                    className="font-ltr text-xs px-3 py-1.5 rounded-md border border-border inline-flex items-center gap-1 hover:bg-accent">
+                    <CheckCircle2 className="h-3.5 w-3.5" /> {i.status === "resolved" ? "Reopen" : "Mark resolved"}
+                  </button>
+                  <a href={`mailto:${i.email}?subject=Re: ${encodeURIComponent(i.subject ?? "Your inquiry")}`}
+                    className="font-ltr text-xs px-3 py-1.5 rounded-md border border-border inline-flex items-center gap-1 hover:bg-accent">
+                    <Mail className="h-3.5 w-3.5" /> Reply
+                  </a>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+
+
       <section className="card-royal rounded-2xl p-4 sm:p-6">
         <h2 className="urdu text-lg sm:text-xl mb-3 inline-flex items-center gap-2"><ShieldCheck className="h-4 w-4" /> صارفین</h2>
         {users.isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : (
