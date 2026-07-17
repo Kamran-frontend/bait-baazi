@@ -19,7 +19,7 @@ const Input = z.object({
 });
 
 export const getAiReply = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => Input.parse(d))
+  .validator((d: unknown) => Input.parse(d))
   .handler(async ({ data }) => {
     const supabase = sbPublic();
     let query = supabase.from("shair")
@@ -45,7 +45,7 @@ export const getAiReply = createServerFn({ method: "POST" })
   });
 
 export const verifyShair = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => z.object({ text: z.string().min(3) }).parse(d))
+  .validator((d: unknown) => z.object({ text: z.string().min(3) }).parse(d))
   .handler(async ({ data }) => {
     const supabase = sbPublic();
     const snippet = data.text.trim().replace(/\s+/g, " ").slice(0, 40);
@@ -58,7 +58,7 @@ export const verifyShair = createServerFn({ method: "POST" })
 
 /** Random shair for practice mode. */
 export const getRandomShair = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => z.object({
+  .validator((d: unknown) => z.object({
     startLetter: z.string().optional(),
     excludeIds: z.array(z.string()).default([]),
   }).parse(d))
@@ -80,7 +80,7 @@ export const getRandomShair = createServerFn({ method: "POST" })
  * candidates via Lovable AI Gateway, then searches the shair library.
  */
 export const aiSearch = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => z.object({ query: z.string().min(1) }).parse(d))
+  .validator((d: unknown) => z.object({ query: z.string().min(1) }).parse(d))
   .handler(async ({ data }) => {
     const apiKey = process.env.LOVABLE_API_KEY;
     if (!apiKey) throw new Error("Missing LOVABLE_API_KEY");
