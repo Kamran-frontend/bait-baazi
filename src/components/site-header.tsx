@@ -21,6 +21,7 @@ export function SiteHeader() {
     { to: "/play", label: "بیت بازی" },
     { to: "/practice", label: "مشق" },
     { to: "/favorites", label: "پسندیدہ" },
+    { to: "/contact", label: "رابطہ" },
     { to: "/admin", label: "ایڈمن" },
   ] as const;
 
