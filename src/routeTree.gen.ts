@@ -14,6 +14,7 @@ import { Route as SearchRouteImport } from './routes/search'
 import { Route as PracticeRouteImport } from './routes/practice'
 import { Route as PlayRouteImport } from './routes/play'
 import { Route as FavoritesRouteImport } from './routes/favorites'
+import { Route as ContactRouteImport } from './routes/contact'
 import { Route as BrowseRouteImport } from './routes/browse'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AdminRouteImport } from './routes/admin'
@@ -43,6 +44,11 @@ const PlayRoute = PlayRouteImport.update({
 const FavoritesRoute = FavoritesRouteImport.update({
   id: '/favorites',
   path: '/favorites',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ContactRoute = ContactRouteImport.update({
+  id: '/contact',
+  path: '/contact',
   getParentRoute: () => rootRouteImport,
 } as any)
 const BrowseRoute = BrowseRouteImport.update({
@@ -76,6 +82,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
   '/browse': typeof BrowseRoute
+  '/contact': typeof ContactRoute
   '/favorites': typeof FavoritesRoute
   '/play': typeof PlayRoute
   '/practice': typeof PracticeRoute
@@ -88,6 +95,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
   '/browse': typeof BrowseRoute
+  '/contact': typeof ContactRoute
   '/favorites': typeof FavoritesRoute
   '/play': typeof PlayRoute
   '/practice': typeof PracticeRoute
@@ -101,6 +109,7 @@ export interface FileRoutesById {
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
   '/browse': typeof BrowseRoute
+  '/contact': typeof ContactRoute
   '/favorites': typeof FavoritesRoute
   '/play': typeof PlayRoute
   '/practice': typeof PracticeRoute
@@ -115,6 +124,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/auth'
     | '/browse'
+    | '/contact'
     | '/favorites'
     | '/play'
     | '/practice'
@@ -127,6 +137,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/auth'
     | '/browse'
+    | '/contact'
     | '/favorites'
     | '/play'
     | '/practice'
@@ -139,6 +150,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/auth'
     | '/browse'
+    | '/contact'
     | '/favorites'
     | '/play'
     | '/practice'
@@ -152,6 +164,7 @@ export interface RootRouteChildren {
   AdminRoute: typeof AdminRoute
   AuthRoute: typeof AuthRoute
   BrowseRoute: typeof BrowseRoute
+  ContactRoute: typeof ContactRoute
   FavoritesRoute: typeof FavoritesRoute
   PlayRoute: typeof PlayRoute
   PracticeRoute: typeof PracticeRoute
@@ -197,6 +210,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FavoritesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/contact': {
+      id: '/contact'
+      path: '/contact'
+      fullPath: '/contact'
+      preLoaderRoute: typeof ContactRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/browse': {
       id: '/browse'
       path: '/browse'
@@ -240,6 +260,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminRoute: AdminRoute,
   AuthRoute: AuthRoute,
   BrowseRoute: BrowseRoute,
+  ContactRoute: ContactRoute,
   FavoritesRoute: FavoritesRoute,
   PlayRoute: PlayRoute,
   PracticeRoute: PracticeRoute,
