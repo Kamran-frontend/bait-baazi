@@ -90,21 +90,20 @@ function AdminPage() {
     enabled: isAdmin,
   });
 
+  const inquiries = useQuery({
+    queryKey: ["admin", "inquiries"],
+    queryFn: () => listInquiriesFn(),
+    enabled: isAdmin,
+  });
+
   if (role === null) return <div className="text-center py-20"><Loader2 className="h-6 w-6 animate-spin mx-auto text-gold" /></div>;
 
   if (!isAdmin) {
     return (
       <div className="max-w-md mx-auto card-royal rounded-2xl p-6 sm:p-8 text-center">
         <Shield className="h-10 w-10 text-gold mx-auto mb-3" />
-        <h2 className="urdu text-2xl text-gold mb-2">ایڈمن اکاؤنٹ</h2>
-        <p className="font-ltr text-sm text-muted-foreground mb-4">You are signed in but not an admin. Claim admin (first user only):</p>
-        <button
-          onClick={async () => {
-            try { const r = await askClaim(); setClaimStatus(r.alreadyAdmin ? "Already admin" : "Admin granted!"); const rr = await askRole(); setRole(rr.roles); }
-            catch (e) { setClaimStatus(e instanceof Error ? e.message : "Failed"); }
-          }}
-          className="bg-gold-gradient rounded-lg px-5 py-2.5 font-ltr font-semibold">Claim admin</button>
-        {claimStatus && <p className="mt-3 text-sm font-ltr">{claimStatus}</p>}
+        <h2 className="urdu text-2xl text-gold mb-2">رسائی مسدود</h2>
+        <p className="font-ltr text-sm text-muted-foreground">This area is restricted to the site owner.</p>
       </div>
     );
   }
