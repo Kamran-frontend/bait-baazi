@@ -423,3 +423,43 @@ export const deleteUser = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+/** Public: submit an inquiry (Contact form). Anyone can submit. */
+export const submitInquiry = createServerFn({ method: "POST" })
+  .validator((d: unknown) => z.object({
+    name: z.string().trim().min(1).max(100),
+    email: z.string().trim().email().max(200),
+    subject: z.string().trim().max(200).optional(),
+    message: z.string().trim().min(3).max(3000),
+  }).parse(d))
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin.from("inquiries").insert({
+      name: data.name, email: data.email, subject: data.subject ?? null, message: data.message,
+    });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const listInquiries = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data, error } = await supabaseAdmin.from("inquiries")
+      .select("id, name, email, subject, message, status, created_at")
+      .order("created_at", { ascending: false }).limit(200);
+    if (error) throw new Error(error.message);
+    return data ?? [];
+  });
+
+export const setInquiryStatus = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .validator((d: unknown) => z.object({ id: z.string().uuid(), status: z.enum(["open", "resolved"]) }).parse(d))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin.from("inquiries").update({ status: data.status }).eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
