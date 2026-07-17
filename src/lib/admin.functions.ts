@@ -3,25 +3,20 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
 import { getStartLetter, getEndLetter, isUrduLetter, isAttackLetter } from "@/lib/urdu";
 
-/** Bootstrap: if no admin exists yet, grant the caller the admin role. */
-export const claimAdmin = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { count } = await supabaseAdmin.from("user_roles").select("id", { count: "exact", head: true }).eq("role", "admin");
-    if ((count ?? 0) > 0) {
-      const { data: mine } = await supabaseAdmin.from("user_roles").select("id").eq("user_id", context.userId).eq("role", "admin").maybeSingle();
-      if (mine) return { ok: true, alreadyAdmin: true };
-      throw new Error("An admin already exists.");
-    }
-    const { error } = await supabaseAdmin.from("user_roles").insert({ user_id: context.userId, role: "admin" });
-    if (error) throw new Error(error.message);
-    return { ok: true, alreadyAdmin: false };
-  });
+const OWNER_EMAIL = "kamranali130893@gmail.com";
 
 export const myRole = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
+    const email = (context.claims.email as string | undefined)?.toLowerCase();
+    // Auto-grant admin for the sole owner if not present yet.
+    if (email === OWNER_EMAIL) {
+      const { data: mine } = await context.supabase.from("user_roles").select("role").eq("user_id", context.userId).eq("role", "admin").maybeSingle();
+      if (!mine) {
+        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+        await supabaseAdmin.from("user_roles").upsert({ user_id: context.userId, role: "admin" }, { onConflict: "user_id,role" });
+      }
+    }
     const { data } = await context.supabase.from("user_roles").select("role").eq("user_id", context.userId);
     return { roles: (data ?? []).map(r => r.role as string), userId: context.userId };
   });
