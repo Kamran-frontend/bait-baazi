@@ -22,7 +22,7 @@ export const Route = createFileRoute("/admin")({
   component: AdminPage,
 });
 
-type ShairRow = { id: string; text_urdu: string; start_letter: string; end_letter: string; source: string | null; created_at: string; poet_id?: string | null; book_id?: string | null };
+type ShairRow = { id: string; serial: number | null; text_urdu: string; start_letter: string; end_letter: string; source: string | null; created_at: string; poet_id?: string | null; book_id?: string | null };
 
 function AdminPage() {
   const askRole = useServerFn(myRole);
