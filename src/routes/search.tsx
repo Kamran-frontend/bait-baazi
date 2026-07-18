@@ -113,7 +113,12 @@ function SearchPage() {
         <div className="max-w-2xl mx-auto flex flex-wrap gap-1.5 justify-center">
           <span className="font-ltr text-xs text-muted-foreground">Matched:</span>
           {keywords.map(k => (
-            <span key={k} className="urdu text-sm px-2 py-0.5 rounded-full border border-border">{k}</span>
+            <button
+              key={k}
+              type="button"
+              onClick={() => { setQ(k); go(k); }}
+              className="urdu text-sm px-2 py-0.5 rounded-full border border-border hover:bg-accent transition-colors"
+            >{k}</button>
           ))}
         </div>
       )}
