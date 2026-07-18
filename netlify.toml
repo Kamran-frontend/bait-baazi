@@ -2,7 +2,11 @@
   command = "npm run build"
   publish = "dist"
 
-# Nitro's Netlify preset auto-activates when NETLIFY env is set,
-# so the TanStack Start build outputs a Netlify-ready function bundle.
 [build.environment]
   NODE_VERSION = "20"
+  SUPABASE_URL = "https://aazamsawedeqtlaecfon.supabase.co"
+  SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFhemFtc2F3ZWRlcXRsYWVjZm9uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM4MDgyOTcsImV4cCI6MjA5OTM4NDI5N30.jjSyBC8ZXvromnTTAqu9DZLlE4q3djTUTR-irNjidrs"
+  SUPABASE_PROJECT_ID = "aazamsawedeqtlaecfon"
+  VITE_SUPABASE_URL = "https://aazamsawedeqtlaecfon.supabase.co"
+  VITE_SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFhemFtc2F3ZWRlcXRsYWVjZm9uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM4MDgyOTcsImV4cCI6MjA5OTM4NDI5N30.jjSyBC8ZXvromnTTAqu9DZLlE4q3djTUTR-irNjidrs"
+  VITE_SUPABASE_PROJECT_ID = "aazamsawedeqtlaecfon"

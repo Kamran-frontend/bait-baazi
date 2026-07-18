@@ -2,6 +2,7 @@ import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
 import { ShairCard } from "@/components/shair-card";
+import { Pagination, usePaged } from "@/components/pagination";
 import type { Shair } from "@/lib/queries";
 import { Loader2 } from "lucide-react";
 
@@ -17,27 +18,34 @@ export const Route = createFileRoute("/favorites")({
 
 function Favs() {
   const [items, setItems] = useState<Shair[] | null>(null);
+  const [page, setPage] = useState(1);
   useEffect(() => {
     (async () => {
       const { data } = await supabase.from("favorites")
-        .select("shair:shair(id, text_urdu, poet_id, book_id, page_number, start_letter, end_letter, category, difficulty, popularity, is_attack, source, poet:poets(name_urdu, name_english), book:books(title_urdu))")
+        .select("shair:shair(id, serial, text_urdu, poet_id, book_id, page_number, start_letter, end_letter, category, difficulty, popularity, is_attack, source, poet:poets(name_urdu, name_english), book:books(title_urdu))")
         .order("created_at", { ascending: false });
       setItems(((data ?? []).map(r => (r as unknown as { shair: Shair }).shair).filter(Boolean)) as Shair[]);
     })();
   }, []);
   if (items === null) return <div className="text-center py-16"><Loader2 className="h-6 w-6 animate-spin mx-auto text-gold" /></div>;
+  const paged = usePaged(items, page);
   return (
     <div className="space-y-6">
       <header className="text-center">
         <h1 className="urdu text-3xl text-gold">پسندیدہ اشعار</h1>
+        {items.length > 0 && <p className="font-ltr text-sm text-muted-foreground mt-1">{items.length} total</p>}
       </header>
       {items.length === 0 ? (
         <p className="text-center text-muted-foreground urdu">ابھی کوئی پسندیدہ نہیں — <Link to="/browse" className="text-gold underline">حروف دیکھیں</Link></p>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2">
-          {items.map(s => <ShairCard key={s.id} shair={s} />)}
-        </div>
+        <>
+          <div className="grid gap-4 md:grid-cols-2">
+            {paged.slice.map(s => <ShairCard key={s.id} shair={s} />)}
+          </div>
+          <Pagination page={paged.page} totalPages={paged.totalPages} onChange={setPage} />
+        </>
       )}
     </div>
   );
 }
+

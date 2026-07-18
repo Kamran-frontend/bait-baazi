@@ -207,6 +207,7 @@ export type Database = {
           poet_id: string | null
           popularity: number | null
           search_vector: unknown
+          serial: number
           source: string | null
           start_letter: string
           tags: string[] | null
@@ -226,6 +227,7 @@ export type Database = {
           poet_id?: string | null
           popularity?: number | null
           search_vector?: unknown
+          serial?: number
           source?: string | null
           start_letter: string
           tags?: string[] | null
@@ -245,6 +247,7 @@ export type Database = {
           poet_id?: string | null
           popularity?: number | null
           search_vector?: unknown
+          serial?: number
           source?: string | null
           start_letter?: string
           tags?: string[] | null

@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { type Shair } from "@/lib/queries";
 import { aiSearch } from "@/lib/ai.functions";
 import { ShairCard } from "@/components/shair-card";
+import { Pagination, usePaged } from "@/components/pagination";
 import { useState } from "react";
 import { Loader2, Mic, MicOff, Search as SearchIcon } from "lucide-react";
 import { useVoiceInput } from "@/hooks/use-voice-input";
@@ -19,7 +20,7 @@ export const Route = createFileRoute("/search")({
 });
 
 const shairSelect = `
-  id, text_urdu, poet_id, book_id, page_number, start_letter, end_letter,
+  id, serial, text_urdu, poet_id, book_id, page_number, start_letter, end_letter,
   category, difficulty, popularity, is_attack, source,
   poet:poets(name_urdu, name_english),
   book:books(title_urdu)
@@ -35,6 +36,7 @@ function SearchPage() {
   const [busy, setBusy] = useState(false);
   const [keywords, setKeywords] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
 
   const runAi = useServerFn(aiSearch);
 
@@ -47,7 +49,7 @@ function SearchPage() {
   const go = async (text?: string) => {
     const query = (text ?? q).trim();
     if (!query) return;
-    setApplied(query); setBusy(true); setError(null); setKeywords([]);
+    setApplied(query); setBusy(true); setError(null); setKeywords([]); setPage(1);
     const merged = new Map<string, Shair>();
     try {
       // 1. Direct match — instant if user typed Urdu.
@@ -134,9 +136,19 @@ function SearchPage() {
       )}
       {error && <p className="text-center text-sm text-destructive font-ltr">{error}</p>}
 
-      <div className="grid gap-3 sm:gap-4 md:grid-cols-2">
-        {results.map(s => <ShairCard key={s.id} shair={s} />)}
-      </div>
+      <SearchResults results={results} page={page} setPage={setPage} />
     </div>
+  );
+}
+
+function SearchResults({ results, page, setPage }: { results: Shair[]; page: number; setPage: (p: number) => void }) {
+  const paged = usePaged(results, page);
+  return (
+    <>
+      <div className="grid gap-3 sm:gap-4 md:grid-cols-2">
+        {paged.slice.map(s => <ShairCard key={s.id} shair={s} />)}
+      </div>
+      <Pagination page={paged.page} totalPages={paged.totalPages} onChange={setPage} />
+    </>
   );
 }
