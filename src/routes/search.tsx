@@ -20,7 +20,7 @@ export const Route = createFileRoute("/search")({
 });
 
 const shairSelect = `
-  id, text_urdu, poet_id, book_id, page_number, start_letter, end_letter,
+  id, serial, text_urdu, poet_id, book_id, page_number, start_letter, end_letter,
   category, difficulty, popularity, is_attack, source,
   poet:poets(name_urdu, name_english),
   book:books(title_urdu)
