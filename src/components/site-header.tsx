@@ -2,7 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { LogIn, Menu, X } from "lucide-react";
-import logoAsset from "@/assets/bait-baazi-logo.png.asset.json";
+const LOGO_URL = "/logo.png";
 
 export function SiteHeader() {
   const [open, setOpen] = useState(false);
