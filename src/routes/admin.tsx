@@ -262,7 +262,7 @@ function AdminPage() {
       {/* Maintenance */}
       <section className="card-royal rounded-2xl p-4 sm:p-6">
         <h2 className="urdu text-lg sm:text-xl text-gold mb-2">دیکھ بھال</h2>
-        <p className="font-ltr text-xs text-muted-foreground mb-3">Recompute every shair's start & end letters using the latest Urdu logic (fixes ں / ن and ے / ی confusion).</p>
+        <p className="font-ltr text-xs text-muted-foreground mb-3">Recompute every shair's start and end letters using the latest Urdu logic.</p>
         <button disabled={reclassBusy} onClick={async () => {
           setReclassBusy(true); setReclassResult("");
           try {

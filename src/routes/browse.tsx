@@ -61,7 +61,7 @@ function Browse() {
       <div className="grid grid-cols-6 sm:grid-cols-8 md:grid-cols-10 gap-3">
         {URDU_LETTERS.map(l => (
           <Link key={l} to="/letter/$mode/$letter" params={{ mode: tab, letter: l }}>
-            <LetterChip letter={l} count={stats.countsByLetter[l] ?? 0} mode={tab} />
+            <LetterChip letter={l} count={(tab === "start" ? stats.countsByLetter : stats.countsByEndLetter)[l] ?? 0} mode={tab} />
           </Link>
         ))}
       </div>

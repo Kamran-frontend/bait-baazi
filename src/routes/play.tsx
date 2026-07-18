@@ -18,7 +18,7 @@ export const Route = createFileRoute("/play")({
   head: () => ({
     meta: [
       { title: "بیت بازی — Play against AI | Urdu Shair Game" },
-      { name: "description", content: "Play Bait Baazi against an AI opponent that draws from a library of classical Urdu poetry." },
+      { name: "description", content: "Play Bait Baazi against an AI opponent that draws from a library of Ahmadiyya Muslim Jamat Urdu poetry." },
     ],
   }),
   component: Play,

@@ -79,17 +79,20 @@ export function shairStatsQuery() {
         supabase.from("shair").select("id", { count: "exact", head: true }),
         supabase.from("poets").select("id", { count: "exact", head: true }),
         supabase.from("books").select("id", { count: "exact", head: true }),
-        supabase.from("shair").select("start_letter"),
+        supabase.from("shair").select("start_letter, end_letter").limit(50000),
       ]);
-      const counts: Record<string, number> = {};
-      for (const r of (byLetter.data ?? []) as { start_letter: string }[]) {
-        counts[r.start_letter] = (counts[r.start_letter] ?? 0) + 1;
+      const countsByLetter: Record<string, number> = {};
+      const countsByEndLetter: Record<string, number> = {};
+      for (const r of (byLetter.data ?? []) as { start_letter: string; end_letter: string }[]) {
+        if (r.start_letter) countsByLetter[r.start_letter] = (countsByLetter[r.start_letter] ?? 0) + 1;
+        if (r.end_letter) countsByEndLetter[r.end_letter] = (countsByEndLetter[r.end_letter] ?? 0) + 1;
       }
       return {
         totalShair: total.count ?? 0,
         totalPoets: poetsC.count ?? 0,
         totalBooks: booksC.count ?? 0,
-        countsByLetter: counts,
+        countsByLetter,
+        countsByEndLetter,
       };
     },
   });

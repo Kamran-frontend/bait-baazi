@@ -4,7 +4,7 @@ import { shairStatsQuery, shairByStartLetterQuery } from "@/lib/queries";
 import { URDU_LETTERS } from "@/lib/urdu";
 import { ShairCard, LetterChip } from "@/components/shair-card";
 import { BookOpen, GraduationCap, Search, Swords } from "lucide-react";
-import logoAsset from "@/assets/bait-baazi-logo.png.asset.json";
+const LOGO_URL = "/logo.png";
 
 export const Route = createFileRoute("/")({
   loader: async ({ context }) => {
@@ -16,7 +16,7 @@ export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: "بیت بازی — Urdu Bait Baazi | AI Shair Library" },
-      { name: "description", content: "Play Bait Baazi against an AI opponent trained on classical Urdu poetry. Browse shair by every Urdu alphabet." },
+      { name: "description", content: "Play Bait Baazi against an AI opponent trained on Ahmadiyya Muslim Jamat Urdu poetry. Browse shair by every Urdu alphabet." },
     ],
   }),
   component: Home,
@@ -31,7 +31,7 @@ function Home() {
     <div className="space-y-10">
       {/* Hero */}
       <section className="text-center py-6 sm:py-10">
-        <img src={logoAsset.url} alt="Bait Baazi" className="mx-auto h-20 sm:h-32 w-auto mb-6" />
+        <img src={LOGO_URL} alt="Bait Baazi" className="mx-auto h-20 sm:h-32 w-auto mb-6" />
         <div className="flex flex-wrap justify-center gap-2 sm:gap-3">
           <Link to="/play" className="bg-gold-gradient rounded-lg px-4 sm:px-6 py-2.5 sm:py-3 font-ltr text-sm sm:text-base font-semibold inline-flex items-center gap-2 hover:opacity-90">
             <Swords className="h-4 w-4" /> Play
