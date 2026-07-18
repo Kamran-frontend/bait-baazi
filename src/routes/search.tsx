@@ -49,7 +49,7 @@ function SearchPage() {
   const go = async (text?: string) => {
     const query = (text ?? q).trim();
     if (!query) return;
-    setApplied(query); setBusy(true); setError(null); setKeywords([]);
+    setApplied(query); setBusy(true); setError(null); setKeywords([]); setPage(1);
     const merged = new Map<string, Shair>();
     try {
       // 1. Direct match — instant if user typed Urdu.
