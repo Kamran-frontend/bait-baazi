@@ -4,7 +4,7 @@ import { shairStatsQuery, shairByStartLetterQuery } from "@/lib/queries";
 import { URDU_LETTERS } from "@/lib/urdu";
 import { ShairCard, LetterChip } from "@/components/shair-card";
 import { BookOpen, GraduationCap, Search, Swords } from "lucide-react";
-import logoAsset from "@/assets/bait-baazi-logo.png.asset.json";
+const LOGO_URL = "/logo.png";
 
 export const Route = createFileRoute("/")({
   loader: async ({ context }) => {
