@@ -36,6 +36,7 @@ function SearchPage() {
   const [busy, setBusy] = useState(false);
   const [keywords, setKeywords] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
 
   const runAi = useServerFn(aiSearch);
 
