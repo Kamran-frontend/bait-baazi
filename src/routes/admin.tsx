@@ -429,7 +429,7 @@ function RecentShairSection({ recent, page, setPage, onEdit, onDelete }: {
   recent: ShairRow[]; page: number; setPage: (p: number) => void;
   onEdit: (r: ShairRow) => void; onDelete: (id: string) => void;
 }) {
-  const paged = usePaged(recent, page);
+  const paged = usePaged<ShairRow>(recent, page);
   return (
     <section className="card-royal rounded-2xl p-4 sm:p-6">
       <div className="flex items-center justify-between mb-3">
