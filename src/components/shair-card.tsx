@@ -56,6 +56,11 @@ export function ShairCard({ shair, compact, done }: {
     <article className={`card-royal rounded-2xl p-3 sm:p-5 transition-transform hover:-translate-y-0.5 ${done ? "opacity-60" : ""}`}>
       <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 mb-3">
         <div className="flex min-w-0 items-center gap-1.5 sm:gap-2 flex-wrap">
+          {shair.serial != null && (
+            <span className="font-ltr text-[10px] sm:text-xs px-1.5 py-0.5 rounded-md border border-border text-muted-foreground shrink-0">
+              #{shair.serial}
+            </span>
+          )}
           <span className="urdu text-lg sm:text-2xl text-gold shrink-0">{shair.start_letter}</span>
           <span className="text-muted-foreground font-ltr text-xs shrink-0">→</span>
           <span className="urdu text-lg sm:text-2xl text-gold shrink-0">{shair.end_letter}</span>
