@@ -414,35 +414,50 @@ function AdminPage() {
       </section>
 
       {/* Recent */}
-      <section className="card-royal rounded-2xl p-4 sm:p-6">
-        <h2 className="urdu text-lg sm:text-xl text-gold mb-3">تازہ اشعار</h2>
-        <div className="space-y-2">
-          {(recent.data ?? []).map(s => (
-            <div key={s.id} className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-2 border-b border-border/50 pb-2">
-              <div className="min-w-0">
-                <p className="urdu text-base sm:text-lg break-words whitespace-pre-line">{s.text_urdu}</p>
-                <p className="font-ltr text-[11px] text-muted-foreground mt-1">{s.start_letter} → {s.end_letter} · {s.source}</p>
-              </div>
-              <div className="flex items-center gap-1 shrink-0">
-                <button onClick={() => setEdit(s)} className="p-2 rounded-md hover:bg-accent/50 text-gold" aria-label="Edit"><Pencil className="h-4 w-4" /></button>
-                <button
-                  onClick={async () => {
-                    if (!confirm("Delete this shair?")) return;
-                    await delFn({ data: { id: s.id } }); qc.invalidateQueries();
-                  }}
-                  className="p-2 rounded-md hover:bg-destructive/20 text-destructive" aria-label="Delete"><Trash2 className="h-4 w-4" /></button>
-              </div>
-            </div>
-          ))}
-          {!recent.data?.length && <p className="text-muted-foreground text-sm">No shair yet.</p>}
-        </div>
-        <div className="mt-4 text-center">
-          <Link to="/" className="font-ltr text-xs text-gold-muted hover:text-gold">← Back home</Link>
-        </div>
-      </section>
+      <RecentShairSection recent={recent.data ?? []} page={recentPage} setPage={setRecentPage} onEdit={setEdit} onDelete={async (id) => {
+        if (!confirm("Delete this shair?")) return;
+        await delFn({ data: { id } }); qc.invalidateQueries();
+      }} />
 
       {edit && <EditModal row={edit} onClose={() => setEdit(null)} onSaved={() => { setEdit(null); qc.invalidateQueries(); }} save={editFn} />}
     </div>
+  );
+}
+
+function RecentShairSection({ recent, page, setPage, onEdit, onDelete }: {
+  recent: ShairRow[]; page: number; setPage: (p: number) => void;
+  onEdit: (r: ShairRow) => void; onDelete: (id: string) => void;
+}) {
+  const paged = usePaged(recent, page);
+  return (
+    <section className="card-royal rounded-2xl p-4 sm:p-6">
+      <div className="flex items-center justify-between mb-3">
+        <h2 className="urdu text-lg sm:text-xl text-gold">تمام اشعار</h2>
+        <span className="font-ltr text-xs text-muted-foreground">{recent.length} total</span>
+      </div>
+      <div className="space-y-2">
+        {paged.slice.map((s) => (
+          <div key={s.id} className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-2 border-b border-border/50 pb-2">
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 flex-wrap mb-1">
+                {s.serial != null && <span className="font-ltr text-[10px] px-1.5 py-0.5 rounded-md border border-border text-muted-foreground">#{s.serial}</span>}
+                <span className="font-ltr text-[11px] text-muted-foreground">{s.start_letter} → {s.end_letter} · {s.source}</span>
+              </div>
+              <p className="urdu text-base sm:text-lg break-words whitespace-pre-line">{s.text_urdu}</p>
+            </div>
+            <div className="flex items-center gap-1 shrink-0">
+              <button onClick={() => onEdit(s)} className="p-2 rounded-md hover:bg-accent/50 text-gold" aria-label="Edit"><Pencil className="h-4 w-4" /></button>
+              <button onClick={() => onDelete(s.id)} className="p-2 rounded-md hover:bg-destructive/20 text-destructive" aria-label="Delete"><Trash2 className="h-4 w-4" /></button>
+            </div>
+          </div>
+        ))}
+        {!recent.length && <p className="text-muted-foreground text-sm">No shair yet.</p>}
+      </div>
+      <Pagination page={paged.page} totalPages={paged.totalPages} onChange={setPage} />
+      <div className="mt-4 text-center">
+        <Link to="/" className="font-ltr text-xs text-gold-muted hover:text-gold">← Back home</Link>
+      </div>
+    </section>
   );
 }
 
