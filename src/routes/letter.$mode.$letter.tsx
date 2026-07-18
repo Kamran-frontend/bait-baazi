@@ -30,6 +30,8 @@ function LetterPage() {
   const opts = mode === "start" ? shairByStartLetterQuery(letter) : shairByEndLetterQuery(letter);
   const { data } = useSuspenseQuery(opts);
   const isAttack = mode === "end" && isAttackLetter(letter);
+  const [page, setPage] = useState(1);
+  const paged = usePaged(data, page);
 
   return (
     <div className="space-y-6">
@@ -37,9 +39,9 @@ function LetterPage() {
         <ArrowRight className="h-3 w-3 rotate-180" /> Back to letters
       </Link>
 
-      <header className="text-center card-royal rounded-2xl p-8">
-        <div className="urdu text-8xl text-gold leading-none">{letter}</div>
-        <p className="urdu text-lg text-parchment mt-4">
+      <header className="text-center card-royal rounded-2xl p-6 sm:p-8 flex flex-col items-center">
+        <div className="urdu text-6xl sm:text-8xl text-gold leading-[1.4] pb-2">{letter}</div>
+        <p className="urdu text-base sm:text-lg text-parchment mt-2">
           {mode === "start" ? "اِس حرف سے شروع ہونے والے اشعار" : "اِس حرف پر ختم ہونے والے اشعار"}
         </p>
         <p className="font-ltr text-sm text-muted-foreground mt-1">{data.length} results</p>
@@ -58,9 +60,12 @@ function LetterPage() {
       {data.length === 0 ? (
         <p className="urdu text-center text-muted-foreground py-16 text-xl">اِس حرف کے لیے ابھی کوئی شعر موجود نہیں</p>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2">
-          {data.map(s => <ShairCard key={s.id} shair={s} />)}
-        </div>
+        <>
+          <div className="grid gap-4 md:grid-cols-2">
+            {paged.slice.map(s => <ShairCard key={s.id} shair={s} />)}
+          </div>
+          <Pagination page={paged.page} totalPages={paged.totalPages} onChange={setPage} />
+        </>
       )}
     </div>
   );
