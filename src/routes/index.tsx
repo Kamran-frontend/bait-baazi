@@ -16,7 +16,7 @@ export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: "بیت بازی — Urdu Bait Baazi | AI Shair Library" },
-      { name: "description", content: "Play Bait Baazi against an AI opponent trained on classical Urdu poetry. Browse shair by every Urdu alphabet." },
+      { name: "description", content: "Play Bait Baazi against an AI opponent trained on Ahmadiyya Muslim Jamat Urdu poetry. Browse shair by every Urdu alphabet." },
     ],
   }),
   component: Home,
