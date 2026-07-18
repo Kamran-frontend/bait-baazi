@@ -11,6 +11,7 @@ import {
 } from "@/lib/admin.functions";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Ban, CheckCircle2, Flag, ImagePlus, Inbox, Loader2, Mail, Pencil, RefreshCw, Shield, ShieldCheck, Sparkles, Trash2, UserX, X } from "lucide-react";
+import { Pagination, usePaged } from "@/components/pagination";
 
 export const Route = createFileRoute("/admin")({
   ssr: false,
