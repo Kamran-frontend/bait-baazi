@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { type Shair } from "@/lib/queries";
 import { aiSearch } from "@/lib/ai.functions";
 import { ShairCard } from "@/components/shair-card";
+import { Pagination, usePaged } from "@/components/pagination";
 import { useState } from "react";
 import { Loader2, Mic, MicOff, Search as SearchIcon } from "lucide-react";
 import { useVoiceInput } from "@/hooks/use-voice-input";
