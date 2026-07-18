@@ -78,14 +78,14 @@ function SearchPage() {
     <div className="space-y-5">
       <header className="text-center">
         <h1 className="urdu text-2xl sm:text-3xl mb-2">تلاش</h1>
-        <p className="font-ltr text-xs sm:text-sm text-muted-foreground">Type in Urdu or Roman Urdu — e.g. <em>محبت</em>, <em>mohabbat</em>, <em>ghalib</em></p>
+        <p className="font-ltr text-xs sm:text-sm text-muted-foreground">Type in Urdu or Roman Urdu — search any word, line or poet</p>
       </header>
 
       <form onSubmit={e => { e.preventDefault(); go(); }} className="max-w-2xl mx-auto">
         <div className="flex gap-2 items-stretch">
           <input
             value={q} onChange={e => setQ(e.target.value)}
-            placeholder="dil, mohabbat, غالب…"
+            placeholder="Search…"
             dir="auto"
             className="flex-1 min-w-0 rounded-lg bg-input border border-border px-3 sm:px-4 py-3 text-base sm:text-lg focus:border-foreground focus:outline-none"
           />
