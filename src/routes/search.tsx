@@ -136,9 +136,19 @@ function SearchPage() {
       )}
       {error && <p className="text-center text-sm text-destructive font-ltr">{error}</p>}
 
-      <div className="grid gap-3 sm:gap-4 md:grid-cols-2">
-        {results.map(s => <ShairCard key={s.id} shair={s} />)}
-      </div>
+      <SearchResults results={results} page={page} setPage={setPage} />
     </div>
+  );
+}
+
+function SearchResults({ results, page, setPage }: { results: Shair[]; page: number; setPage: (p: number) => void }) {
+  const paged = usePaged(results, page);
+  return (
+    <>
+      <div className="grid gap-3 sm:gap-4 md:grid-cols-2">
+        {paged.slice.map(s => <ShairCard key={s.id} shair={s} />)}
+      </div>
+      <Pagination page={paged.page} totalPages={paged.totalPages} onChange={setPage} />
+    </>
   );
 }
