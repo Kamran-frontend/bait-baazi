@@ -3,6 +3,8 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { shairByStartLetterQuery, shairByEndLetterQuery } from "@/lib/queries";
 import { URDU_LETTERS, isAttackLetter } from "@/lib/urdu";
 import { ShairCard } from "@/components/shair-card";
+import { Pagination, usePaged } from "@/components/pagination";
+import { useState } from "react";
 import { ArrowRight, Flame, Shield } from "lucide-react";
 
 export const Route = createFileRoute("/letter/$mode/$letter")({
