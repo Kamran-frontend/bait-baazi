@@ -1,0 +1,14 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "npm run build",
+  "build": {
+    "env": {
+      "SUPABASE_URL": "https://aazamsawedeqtlaecfon.supabase.co",
+      "SUPABASE_PUBLISHABLE_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFhemFtc2F3ZWRlcXRsYWVjZm9uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM4MDgyOTcsImV4cCI6MjA5OTM4NDI5N30.jjSyBC8ZXvromnTTAqu9DZLlE4q3djTUTR-irNjidrs",
+      "SUPABASE_PROJECT_ID": "aazamsawedeqtlaecfon",
+      "VITE_SUPABASE_URL": "https://aazamsawedeqtlaecfon.supabase.co",
+      "VITE_SUPABASE_PUBLISHABLE_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFhemFtc2F3ZWRlcXRsYWVjZm9uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM4MDgyOTcsImV4cCI6MjA5OTM4NDI5N30.jjSyBC8ZXvromnTTAqu9DZLlE4q3djTUTR-irNjidrs",
+      "VITE_SUPABASE_PROJECT_ID": "aazamsawedeqtlaecfon"
+    }
+  }
+}
