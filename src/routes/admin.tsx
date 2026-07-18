@@ -72,11 +72,12 @@ function AdminPage() {
   const recent = useQuery({
     queryKey: ["admin", "recent-shair"],
     queryFn: async () => {
-      const { data } = await supabase.from("shair").select("id, text_urdu, start_letter, end_letter, source, created_at, poet_id, book_id").order("created_at", { ascending: false }).limit(30);
+      const { data } = await supabase.from("shair").select("id, serial, text_urdu, start_letter, end_letter, source, created_at, poet_id, book_id").order("serial", { ascending: false }).limit(500);
       return (data ?? []) as ShairRow[];
     },
     enabled: isAdmin,
   });
+  const [recentPage, setRecentPage] = useState(1);
 
   const flags = useQuery({
     queryKey: ["admin", "flags"],
