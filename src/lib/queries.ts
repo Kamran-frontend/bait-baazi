@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 export type Shair = {
   id: string;
+  serial: number | null;
   text_urdu: string;
   poet_id: string | null;
   book_id: string | null;
@@ -19,7 +20,7 @@ export type Shair = {
 };
 
 const shairSelect = `
-  id, text_urdu, poet_id, book_id, page_number, start_letter, end_letter,
+  id, serial, text_urdu, poet_id, book_id, page_number, start_letter, end_letter,
   category, difficulty, popularity, is_attack, source,
   poet:poets(name_urdu, name_english),
   book:books(title_urdu)
