@@ -1,5 +1,6 @@
 import type { Shair } from "@/lib/queries";
-import { Bookmark, Check, Flag, Flame, Shield } from "lucide-react";
+import { Link } from "@tanstack/react-router";
+import { Bookmark, Check, Flag, Flame, Info, Shield } from "lucide-react";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -76,6 +77,13 @@ export function ShairCard({ shair, compact, done }: {
           )}
         </div>
         <div className="flex items-center gap-0.5 shrink-0">
+          <Link
+            to="/shair/$id" params={{ id: shair.id }}
+            className="p-1.5 rounded-md hover:bg-accent/60 text-muted-foreground"
+            aria-label="View shair details" title="View details"
+          >
+            <Info className="h-4 w-4" />
+          </Link>
           <button
             onClick={toggleFav} disabled={busy}
             className="p-1.5 rounded-md hover:bg-accent/60 disabled:opacity-50"

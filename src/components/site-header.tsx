@@ -18,6 +18,7 @@ export function SiteHeader() {
     { to: "/", label: "صفحۂ اول" },
     { to: "/browse", label: "حروف" },
     { to: "/search", label: "تلاش" },
+    { to: "/explore", label: "فلٹر" },
     { to: "/play", label: "بیت بازی" },
     { to: "/practice", label: "مشق" },
     { to: "/favorites", label: "پسندیدہ" },

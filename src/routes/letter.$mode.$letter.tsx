@@ -4,6 +4,9 @@ import { shairByStartLetterQuery, shairByEndLetterQuery } from "@/lib/queries";
 import { URDU_LETTERS, isAttackLetter } from "@/lib/urdu";
 import { ShairCard } from "@/components/shair-card";
 import { Pagination, usePaged } from "@/components/pagination";
+import { PageSpinner } from "@/components/loading";
+import { downloadCsv, shairToCsv } from "@/lib/csv";
+import { Download } from "lucide-react";
 import { useState } from "react";
 import { ArrowRight, Flame, Shield } from "lucide-react";
 
@@ -22,6 +25,7 @@ export const Route = createFileRoute("/letter/$mode/$letter")({
       { name: "description", content: `Shair ${params.mode === "start" ? "starting" : "ending"} with the Urdu letter ${params.letter}.` },
     ],
   }),
+  pendingComponent: () => <PageSpinner label="Loading shair…" />,
   notFoundComponent: () => <p className="text-center py-16 urdu text-xl">حرف موجود نہیں</p>,
   errorComponent: ({ error }) => <p className="text-center py-16 text-destructive">{error.message}</p>,
   component: LetterPage,
@@ -47,6 +51,14 @@ function LetterPage() {
           {mode === "start" ? "اِس حرف سے شروع ہونے والے اشعار" : "اِس حرف پر ختم ہونے والے اشعار"}
         </p>
         <p className="font-ltr text-sm text-muted-foreground mt-1">{data.length} results</p>
+        {data.length > 0 && (
+          <button
+            onClick={() => downloadCsv(`shair-${mode}-${letter}`, shairToCsv(data))}
+            className="mt-3 font-ltr text-xs inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-border hover:bg-accent"
+          >
+            <Download className="h-3.5 w-3.5" /> Export CSV
+          </button>
+        )}
         {isAttack && (
           <div className="mt-3 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-destructive/20 text-destructive text-xs font-ltr">
             <Flame className="h-3 w-3" /> Attack letter — hard for opponent

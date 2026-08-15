@@ -14,11 +14,13 @@ import { Route as SearchRouteImport } from './routes/search'
 import { Route as PracticeRouteImport } from './routes/practice'
 import { Route as PlayRouteImport } from './routes/play'
 import { Route as FavoritesRouteImport } from './routes/favorites'
+import { Route as ExploreRouteImport } from './routes/explore'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as BrowseRouteImport } from './routes/browse'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ShairIdRouteImport } from './routes/shair.$id'
 import { Route as LetterModeLetterRouteImport } from './routes/letter.$mode.$letter'
 
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
@@ -46,6 +48,11 @@ const FavoritesRoute = FavoritesRouteImport.update({
   path: '/favorites',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ExploreRoute = ExploreRouteImport.update({
+  id: '/explore',
+  path: '/explore',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ContactRoute = ContactRouteImport.update({
   id: '/contact',
   path: '/contact',
@@ -71,6 +78,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ShairIdRoute = ShairIdRouteImport.update({
+  id: '/shair/$id',
+  path: '/shair/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LetterModeLetterRoute = LetterModeLetterRouteImport.update({
   id: '/letter/$mode/$letter',
   path: '/letter/$mode/$letter',
@@ -83,11 +95,13 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/browse': typeof BrowseRoute
   '/contact': typeof ContactRoute
+  '/explore': typeof ExploreRoute
   '/favorites': typeof FavoritesRoute
   '/play': typeof PlayRoute
   '/practice': typeof PracticeRoute
   '/search': typeof SearchRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/shair/$id': typeof ShairIdRoute
   '/letter/$mode/$letter': typeof LetterModeLetterRoute
 }
 export interface FileRoutesByTo {
@@ -96,11 +110,13 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/browse': typeof BrowseRoute
   '/contact': typeof ContactRoute
+  '/explore': typeof ExploreRoute
   '/favorites': typeof FavoritesRoute
   '/play': typeof PlayRoute
   '/practice': typeof PracticeRoute
   '/search': typeof SearchRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/shair/$id': typeof ShairIdRoute
   '/letter/$mode/$letter': typeof LetterModeLetterRoute
 }
 export interface FileRoutesById {
@@ -110,11 +126,13 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/browse': typeof BrowseRoute
   '/contact': typeof ContactRoute
+  '/explore': typeof ExploreRoute
   '/favorites': typeof FavoritesRoute
   '/play': typeof PlayRoute
   '/practice': typeof PracticeRoute
   '/search': typeof SearchRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/shair/$id': typeof ShairIdRoute
   '/letter/$mode/$letter': typeof LetterModeLetterRoute
 }
 export interface FileRouteTypes {
@@ -125,11 +143,13 @@ export interface FileRouteTypes {
     | '/auth'
     | '/browse'
     | '/contact'
+    | '/explore'
     | '/favorites'
     | '/play'
     | '/practice'
     | '/search'
     | '/sitemap.xml'
+    | '/shair/$id'
     | '/letter/$mode/$letter'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -138,11 +158,13 @@ export interface FileRouteTypes {
     | '/auth'
     | '/browse'
     | '/contact'
+    | '/explore'
     | '/favorites'
     | '/play'
     | '/practice'
     | '/search'
     | '/sitemap.xml'
+    | '/shair/$id'
     | '/letter/$mode/$letter'
   id:
     | '__root__'
@@ -151,11 +173,13 @@ export interface FileRouteTypes {
     | '/auth'
     | '/browse'
     | '/contact'
+    | '/explore'
     | '/favorites'
     | '/play'
     | '/practice'
     | '/search'
     | '/sitemap.xml'
+    | '/shair/$id'
     | '/letter/$mode/$letter'
   fileRoutesById: FileRoutesById
 }
@@ -165,11 +189,13 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   BrowseRoute: typeof BrowseRoute
   ContactRoute: typeof ContactRoute
+  ExploreRoute: typeof ExploreRoute
   FavoritesRoute: typeof FavoritesRoute
   PlayRoute: typeof PlayRoute
   PracticeRoute: typeof PracticeRoute
   SearchRoute: typeof SearchRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  ShairIdRoute: typeof ShairIdRoute
   LetterModeLetterRoute: typeof LetterModeLetterRoute
 }
 
@@ -210,6 +236,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FavoritesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/explore': {
+      id: '/explore'
+      path: '/explore'
+      fullPath: '/explore'
+      preLoaderRoute: typeof ExploreRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/contact': {
       id: '/contact'
       path: '/contact'
@@ -245,6 +278,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/shair/$id': {
+      id: '/shair/$id'
+      path: '/shair/$id'
+      fullPath: '/shair/$id'
+      preLoaderRoute: typeof ShairIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/letter/$mode/$letter': {
       id: '/letter/$mode/$letter'
       path: '/letter/$mode/$letter'
@@ -261,13 +301,25 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   BrowseRoute: BrowseRoute,
   ContactRoute: ContactRoute,
+  ExploreRoute: ExploreRoute,
   FavoritesRoute: FavoritesRoute,
   PlayRoute: PlayRoute,
   PracticeRoute: PracticeRoute,
   SearchRoute: SearchRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
+  ShairIdRoute: ShairIdRoute,
   LetterModeLetterRoute: LetterModeLetterRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}

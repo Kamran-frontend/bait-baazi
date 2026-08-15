@@ -6,6 +6,7 @@ import { LetterChip } from "@/components/shair-card";
 import { useState } from "react";
 import { Flame } from "lucide-react";
 import { z } from "zod";
+import { PageSpinner } from "@/components/loading";
 
 const search = z.object({ mode: z.enum(["start", "end"]).default("start") });
 
@@ -21,6 +22,7 @@ export const Route = createFileRoute("/browse")({
       { name: "description", content: "Browse every Urdu shair organized by starting or ending letter for perfect Bait Baazi strategy." },
     ],
   }),
+  pendingComponent: () => <PageSpinner label="Loading letters…" />,
   component: Browse,
 });
 
@@ -57,6 +59,12 @@ function Browse() {
           </p>
         </div>
       )}
+
+      <div className="text-center">
+        <Link to="/explore" className="font-ltr text-xs px-3 py-1.5 rounded-md border border-border hover:bg-accent inline-flex">
+          Detailed filters &amp; sorting
+        </Link>
+      </div>
 
       <div className="grid grid-cols-6 sm:grid-cols-8 md:grid-cols-10 gap-3">
         {URDU_LETTERS.map(l => (
