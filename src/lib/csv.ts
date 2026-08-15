@@ -34,3 +34,12 @@ export function downloadCsv(filename: string, csv: string) {
   a.remove();
   URL.revokeObjectURL(url);
 }
+
+/** Generic CSV builder for arbitrary row objects. */
+export function rowsToCsv<T extends Record<string, unknown>>(rows: T[], columns: (keyof T)[]): string {
+  const head = columns.map(c => String(c)).join(",");
+  const body = rows.map(r => columns.map(c => esc(
+    typeof r[c] === "string" ? (r[c] as string).replace(/\r?\n/g, " / ") : r[c],
+  )).join(","));
+  return [head, ...body].join("\n");
+}

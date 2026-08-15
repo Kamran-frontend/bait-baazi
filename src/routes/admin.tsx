@@ -10,6 +10,7 @@ import {
   listInquiries, setInquiryStatus,
 } from "@/lib/admin.functions";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { downloadCsv, rowsToCsv } from "@/lib/csv";
 import { Ban, CheckCircle2, Flag, ImagePlus, Inbox, Loader2, Mail, Pencil, RefreshCw, Shield, ShieldCheck, Sparkles, Trash2, UserX, X } from "lucide-react";
 import { Pagination, usePaged } from "@/components/pagination";
 
@@ -434,7 +435,16 @@ function RecentShairSection({ recent, page, setPage, onEdit, onDelete }: {
     <section className="card-royal rounded-2xl p-4 sm:p-6">
       <div className="flex items-center justify-between mb-3">
         <h2 className="urdu text-lg sm:text-xl text-gold">تمام اشعار</h2>
-        <span className="font-ltr text-xs text-muted-foreground">{recent.length} total</span>
+        <div className="flex items-center gap-2">
+          <span className="font-ltr text-xs text-muted-foreground">{recent.length} total</span>
+          <button
+            onClick={() => downloadCsv(`bait-baazi-admin-${Date.now()}`, rowsToCsv(recent as unknown as Record<string, unknown>[], ["serial", "text_urdu", "start_letter", "end_letter", "source", "created_at"]))}
+            disabled={recent.length === 0}
+            className="font-ltr text-xs inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border border-border hover:bg-accent disabled:opacity-40"
+          >
+            <Download className="h-3.5 w-3.5" /> CSV
+          </button>
+        </div>
       </div>
       <div className="space-y-2">
         {paged.slice.map((s) => (
