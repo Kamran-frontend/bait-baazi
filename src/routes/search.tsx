@@ -6,8 +6,10 @@ import { aiSearch } from "@/lib/ai.functions";
 import { ShairCard } from "@/components/shair-card";
 import { Pagination, usePaged } from "@/components/pagination";
 import { useState } from "react";
-import { Loader2, Mic, MicOff, Search as SearchIcon } from "lucide-react";
+import { Download, Loader2, Mic, MicOff, Search as SearchIcon } from "lucide-react";
 import { useVoiceInput } from "@/hooks/use-voice-input";
+import { ShairListSkeleton } from "@/components/loading";
+import { downloadCsv, shairToCsv } from "@/lib/csv";
 
 export const Route = createFileRoute("/search")({
   head: () => ({
@@ -136,7 +138,18 @@ function SearchPage() {
       )}
       {error && <p className="text-center text-sm text-destructive font-ltr">{error}</p>}
 
-      <SearchResults results={results} page={page} setPage={setPage} />
+      {results.length > 0 && !busy && (
+        <div className="flex justify-center">
+          <button
+            onClick={() => downloadCsv(`search-${applied || "results"}`, shairToCsv(results))}
+            className="font-ltr text-xs inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-border hover:bg-accent"
+          >
+            <Download className="h-3.5 w-3.5" /> Export CSV
+          </button>
+        </div>
+      )}
+
+      {busy ? <ShairListSkeleton /> : <SearchResults results={results} page={page} setPage={setPage} />}
     </div>
   );
 }
