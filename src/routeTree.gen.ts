@@ -20,6 +20,7 @@ import { Route as BrowseRouteImport } from './routes/browse'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ShairIdRouteImport } from './routes/shair.$id'
 import { Route as LetterModeLetterRouteImport } from './routes/letter.$mode.$letter'
 
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
@@ -77,6 +78,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ShairIdRoute = ShairIdRouteImport.update({
+  id: '/shair/$id',
+  path: '/shair/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LetterModeLetterRoute = LetterModeLetterRouteImport.update({
   id: '/letter/$mode/$letter',
   path: '/letter/$mode/$letter',
@@ -95,6 +101,7 @@ export interface FileRoutesByFullPath {
   '/practice': typeof PracticeRoute
   '/search': typeof SearchRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/shair/$id': typeof ShairIdRoute
   '/letter/$mode/$letter': typeof LetterModeLetterRoute
 }
 export interface FileRoutesByTo {
@@ -109,6 +116,7 @@ export interface FileRoutesByTo {
   '/practice': typeof PracticeRoute
   '/search': typeof SearchRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/shair/$id': typeof ShairIdRoute
   '/letter/$mode/$letter': typeof LetterModeLetterRoute
 }
 export interface FileRoutesById {
@@ -124,6 +132,7 @@ export interface FileRoutesById {
   '/practice': typeof PracticeRoute
   '/search': typeof SearchRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/shair/$id': typeof ShairIdRoute
   '/letter/$mode/$letter': typeof LetterModeLetterRoute
 }
 export interface FileRouteTypes {
@@ -140,6 +149,7 @@ export interface FileRouteTypes {
     | '/practice'
     | '/search'
     | '/sitemap.xml'
+    | '/shair/$id'
     | '/letter/$mode/$letter'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -154,6 +164,7 @@ export interface FileRouteTypes {
     | '/practice'
     | '/search'
     | '/sitemap.xml'
+    | '/shair/$id'
     | '/letter/$mode/$letter'
   id:
     | '__root__'
@@ -168,6 +179,7 @@ export interface FileRouteTypes {
     | '/practice'
     | '/search'
     | '/sitemap.xml'
+    | '/shair/$id'
     | '/letter/$mode/$letter'
   fileRoutesById: FileRoutesById
 }
@@ -183,6 +195,7 @@ export interface RootRouteChildren {
   PracticeRoute: typeof PracticeRoute
   SearchRoute: typeof SearchRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  ShairIdRoute: typeof ShairIdRoute
   LetterModeLetterRoute: typeof LetterModeLetterRoute
 }
 
@@ -265,6 +278,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/shair/$id': {
+      id: '/shair/$id'
+      path: '/shair/$id'
+      fullPath: '/shair/$id'
+      preLoaderRoute: typeof ShairIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/letter/$mode/$letter': {
       id: '/letter/$mode/$letter'
       path: '/letter/$mode/$letter'
@@ -287,6 +307,7 @@ const rootRouteChildren: RootRouteChildren = {
   PracticeRoute: PracticeRoute,
   SearchRoute: SearchRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
+  ShairIdRoute: ShairIdRoute,
   LetterModeLetterRoute: LetterModeLetterRoute,
 }
 export const routeTree = rootRouteImport
