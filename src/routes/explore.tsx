@@ -9,6 +9,7 @@ import { ShairCard } from "@/components/shair-card";
 import { Pagination, usePaged } from "@/components/pagination";
 import { InlineSpinner, ShairListSkeleton } from "@/components/loading";
 import { downloadCsv, shairToCsv } from "@/lib/csv";
+import { Drawer, DrawerClose, DrawerContent, DrawerFooter, DrawerHeader, DrawerTitle, DrawerTrigger } from "@/components/ui/drawer";
 
 const sortValues = ["serial_asc", "serial_desc", "popular", "newest", "shortest", "longest"] as const;
 
