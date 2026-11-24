@@ -1,8 +1,8 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { z } from "zod";
-import { useState } from "react";
-import { Download, Filter, RotateCcw } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Download, Filter, RotateCcw, X } from "lucide-react";
 import { URDU_LETTERS } from "@/lib/urdu";
 import { booksQuery, poetsQuery, shairFilteredQuery, type ShairSort } from "@/lib/queries";
 import { ShairCard } from "@/components/shair-card";
@@ -38,6 +38,9 @@ export const Route = createFileRoute("/explore")({
   component: Explore,
 });
 
+const FILTERS_KEY = "explore:filters";
+const DRAWER_KEY = "explore:drawer";
+
 const SORT_LABELS: Record<ShairSort, string> = {
   serial_asc: "Serial ↑",
   serial_desc: "Serial ↓",
@@ -51,7 +54,33 @@ function Explore() {
   const sp = Route.useSearch();
   const navigate = useNavigate();
   const [page, setPage] = useState(1);
-  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [drawerOpen, setDrawerOpenState] = useState(false);
+  const restored = useRef(false);
+
+  const setDrawerOpen = (v: boolean) => {
+    setDrawerOpenState(v);
+    try { sessionStorage.setItem(DRAWER_KEY, v ? "1" : "0"); } catch { /* ignore */ }
+  };
+
+  // Restore saved filters + drawer state when returning to the page
+  useEffect(() => {
+    try {
+      if (sessionStorage.getItem(DRAWER_KEY) === "1") setDrawerOpenState(true);
+      const hasFilters = sp.start || sp.end || sp.poet || sp.book || sp.q || sp.attack !== "any" || sp.sort !== "serial_asc";
+      const saved = sessionStorage.getItem(FILTERS_KEY);
+      if (!hasFilters && saved) {
+        navigate({ to: "/explore", search: JSON.parse(saved), replace: true });
+      }
+    } catch { /* ignore */ }
+    restored.current = true;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Save filters whenever they change
+  useEffect(() => {
+    if (!restored.current) return;
+    try { sessionStorage.setItem(FILTERS_KEY, JSON.stringify(sp)); } catch { /* ignore */ }
+  }, [sp]);
 
   const filters = {
     start: sp.start, end: sp.end, poetId: sp.poet, bookId: sp.book,
@@ -72,6 +101,29 @@ function Explore() {
   const activeCount =
     (sp.start ? 1 : 0) + (sp.end ? 1 : 0) + (sp.poet ? 1 : 0) + (sp.book ? 1 : 0) +
     (sp.attack !== "any" ? 1 : 0) + (sp.q?.trim() ? 1 : 0);
+
+  const poetName = (poets.data ?? []).find(p => p.id === sp.poet)?.name_urdu;
+  const bookName = (books.data ?? []).find(b => b.id === sp.book)?.title_urdu;
+  const chips: { key: string; label: string; clear: Partial<typeof sp> }[] = [];
+  if (sp.start) chips.push({ key: "start", label: `Starts: ${sp.start}`, clear: { start: undefined } });
+  if (sp.end) chips.push({ key: "end", label: `Ends: ${sp.end}`, clear: { end: undefined } });
+  if (sp.poet) chips.push({ key: "poet", label: `Poet: ${poetName ?? "…"}`, clear: { poet: undefined } });
+  if (sp.book) chips.push({ key: "book", label: `Book: ${bookName ?? "…"}`, clear: { book: undefined } });
+  if (sp.attack !== "any") chips.push({ key: "attack", label: sp.attack === "only" ? "Attack only" : "Non-attack", clear: { attack: "any" } });
+  if (sp.q?.trim()) chips.push({ key: "q", label: `Text: ${sp.q}`, clear: { q: undefined } });
+  if (sp.sort !== "serial_asc") chips.push({ key: "sort", label: `Sort: ${SORT_LABELS[sp.sort]}`, clear: { sort: "serial_asc" } });
+
+  const chipBar = chips.length > 0 && (
+    <div className="flex flex-wrap items-center gap-2">
+      {chips.map(c => (
+        <button key={c.key} onClick={() => set(c.clear)} aria-label={`Remove ${c.label}`}
+          className="urdu inline-flex items-center gap-1 rounded-full border border-border bg-card px-3 py-1 text-xs hover:bg-accent">
+          <span dir="auto">{c.label}</span><X className="h-3 w-3" />
+        </button>
+      ))}
+      <button onClick={reset} className="font-ltr text-xs underline text-muted-foreground hover:text-foreground">Clear all</button>
+    </div>
+  );
 
   const selectCls = "urdu w-full rounded-lg bg-input border border-border px-2 py-2 text-sm focus:border-foreground focus:outline-none";
 
@@ -130,6 +182,7 @@ function Explore() {
       <label className="block space-y-1">
         <span className="font-ltr text-[11px] text-muted-foreground">Contains text</span>
         <input
+          key={sp.q ?? ""}
           defaultValue={sp.q ?? ""}
           onBlur={e => set({ q: e.target.value.trim() || undefined })}
           onKeyDown={e => { if (e.key === "Enter") set({ q: (e.target as HTMLInputElement).value.trim() || undefined }); }}
@@ -164,6 +217,8 @@ function Explore() {
           Combine start letter, end letter, poet, book and difficulty — then sort or export.
         </p>
       </header>
+
+      {chipBar}
 
       {/* Mobile: filter drawer */}
       <div className="md:hidden space-y-3">
