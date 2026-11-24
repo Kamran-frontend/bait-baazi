@@ -33,7 +33,7 @@ export const Route = createFileRoute("/shair/$id")({
   },
   pendingComponent: () => <PageSpinner label="Loading shair…" />,
   notFoundComponent: () => <p className="text-center py-16 urdu text-xl">یہ شعر موجود نہیں</p>,
-  errorComponent: ({ error }) => <p className="text-center py-16 text-destructive font-ltr">{error.message}</p>,
+  errorComponent: ({ error }) => <p className="text-center py-16 text-destructive font-ltr">{(error as Error).message}</p>,
   component: ShairDetail,
 });
 

@@ -27,7 +27,7 @@ export const Route = createFileRoute("/letter/$mode/$letter")({
   }),
   pendingComponent: () => <PageSpinner label="Loading shair…" />,
   notFoundComponent: () => <p className="text-center py-16 urdu text-xl">حرف موجود نہیں</p>,
-  errorComponent: ({ error }) => <p className="text-center py-16 text-destructive">{error.message}</p>,
+  errorComponent: ({ error }) => <p className="text-center py-16 text-destructive">{(error as Error).message}</p>,
   component: LetterPage,
 });
 
