@@ -88,6 +88,8 @@ export const editShair = createServerFn({ method: "POST" })
     poet_name: z.string().optional(),
     book_title: z.string().optional(),
     page_number: z.number().int().nullable().optional(),
+    poet_id: z.string().uuid().nullable().optional(),
+    book_id: z.string().uuid().nullable().optional(),
   }).parse(d))
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
@@ -95,6 +97,15 @@ export const editShair = createServerFn({ method: "POST" })
     const start = getStartLetter(data.text_urdu);
     const end = getEndLetter(data.text_urdu);
     if (!isUrduLetter(start) || !isUrduLetter(end)) throw new Error("Could not detect start/end letter");
+    if (data.poet_id !== undefined || data.book_id !== undefined) {
+      const { error } = await supabaseAdmin.from("shair").update({
+        text_urdu: data.text_urdu.trim(), start_letter: start, end_letter: end,
+        is_attack: isAttackLetter(end), page_number: data.page_number ?? null,
+        poet_id: data.poet_id ?? null, book_id: data.book_id ?? null,
+      }).eq("id", data.id);
+      if (error) throw new Error(error.message);
+      return { ok: true, start, end };
+    }
     const { poet_id, book_id } = await upsertPoetAndBook(data.poet_name, data.book_title);
     const patch: {
       text_urdu: string; start_letter: string; end_letter: string;

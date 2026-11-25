@@ -13,6 +13,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { downloadCsv, rowsToCsv } from "@/lib/csv";
 import { Ban, CheckCircle2, Download, Flag, ImagePlus, Inbox, Loader2, Mail, Pencil, RefreshCw, Shield, ShieldCheck, Sparkles, Trash2, UserX, X } from "lucide-react";
 import { Pagination, usePaged } from "@/components/pagination";
+import { LibraryEditor } from "@/components/admin-library-editor";
 
 export const Route = createFileRoute("/admin")({
   ssr: false,
@@ -24,7 +25,7 @@ export const Route = createFileRoute("/admin")({
   component: AdminPage,
 });
 
-type ShairRow = { id: string; serial: number | null; text_urdu: string; start_letter: string; end_letter: string; source: string | null; created_at: string; poet_id?: string | null; book_id?: string | null };
+type ShairRow = { id: string; serial: number | null; text_urdu: string; start_letter: string; end_letter: string; source: string | null; created_at: string; poet_id?: string | null; book_id?: string | null; page_number?: number | null };
 
 function AdminPage() {
   const askRole = useServerFn(myRole);
@@ -74,7 +75,7 @@ function AdminPage() {
   const recent = useQuery({
     queryKey: ["admin", "recent-shair"],
     queryFn: async () => {
-      const { data } = await supabase.from("shair").select("id, serial, text_urdu, start_letter, end_letter, source, created_at, poet_id, book_id").order("serial", { ascending: false }).limit(500);
+      const { data } = await supabase.from("shair").select("id, serial, text_urdu, start_letter, end_letter, source, created_at, poet_id, book_id, page_number").order("serial", { ascending: false }).limit(10000);
       return (data ?? []) as ShairRow[];
     },
     enabled: isAdmin,
@@ -415,6 +416,8 @@ function AdminPage() {
         )}
       </section>
 
+      <LibraryEditor />
+
       {/* Recent */}
       <RecentShairSection recent={recent.data ?? []} page={recentPage} setPage={setRecentPage} onEdit={setEdit} onDelete={async (id) => {
         if (!confirm("Delete this shair?")) return;
@@ -430,7 +433,10 @@ function RecentShairSection({ recent, page, setPage, onEdit, onDelete }: {
   recent: ShairRow[]; page: number; setPage: (p: number) => void;
   onEdit: (r: ShairRow) => void; onDelete: (id: string) => void;
 }) {
-  const paged = usePaged<ShairRow>(recent, page);
+  const [q, setQ] = useState("");
+  const term = q.trim().replace(/^#/, "");
+  const filtered = term ? recent.filter(r => String(r.serial ?? "") === term || r.text_urdu.includes(term)) : recent;
+  const paged = usePaged<ShairRow>(filtered, page);
   return (
     <section className="card-royal rounded-2xl p-4 sm:p-6">
       <div className="flex items-center justify-between mb-3">
@@ -446,6 +452,8 @@ function RecentShairSection({ recent, page, setPage, onEdit, onDelete }: {
           </button>
         </div>
       </div>
+      <input value={q} onChange={e => { setQ(e.target.value); setPage(1); }} placeholder="تلاش: متن یا نمبر (#123)"
+        className="urdu w-full mb-3 rounded-lg bg-input border border-border p-2.5 focus:outline-none" dir="rtl" />
       <div className="space-y-2">
         {paged.slice.map((s) => (
           <div key={s.id} className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-2 border-b border-border/50 pb-2">
@@ -474,34 +482,54 @@ function RecentShairSection({ recent, page, setPage, onEdit, onDelete }: {
 
 function EditModal({ row, onClose, onSaved, save }: {
   row: ShairRow; onClose: () => void; onSaved: () => void;
-  save: (args: { data: { id: string; text_urdu: string; poet_name?: string; book_title?: string; page_number?: number | null } }) => Promise<unknown>;
+  save: (args: { data: { id: string; text_urdu: string; page_number?: number | null; poet_id?: string | null; book_id?: string | null } }) => Promise<unknown>;
 }) {
   const [text, setText] = useState(row.text_urdu);
-  const [poet, setPoet] = useState("");
-  const [book, setBook] = useState("");
+  const [poetId, setPoetId] = useState(row.poet_id ?? "");
+  const [bookId, setBookId] = useState(row.book_id ?? "");
+  const [pageNo, setPageNo] = useState(row.page_number != null ? String(row.page_number) : "");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string>("");
+  const poets = useQuery({ queryKey: ["admin", "poets"], queryFn: async () => (await supabase.from("poets").select("id, name_urdu").order("name_urdu")).data ?? [] });
+  const books = useQuery({ queryKey: ["admin", "books"], queryFn: async () => (await supabase.from("books").select("id, title_urdu").order("title_urdu")).data ?? [] });
+  const field = "urdu rounded-lg bg-input border border-border p-2.5 focus:outline-none w-full";
   return (
     <div className="fixed inset-0 z-50 grid place-items-center p-3 bg-black/70 backdrop-blur-sm" onClick={onClose}>
-      <div className="card-royal rounded-2xl w-full max-w-lg p-4 sm:p-6" onClick={e => e.stopPropagation()}>
+      <div className="card-royal rounded-2xl w-full max-w-lg p-4 sm:p-6 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-3">
-          <h3 className="urdu text-lg text-gold">شعر ترمیم کریں</h3>
-          <button onClick={onClose} className="p-1 rounded hover:bg-accent/50"><X className="h-4 w-4" /></button>
+          <h3 className="urdu text-lg text-gold">شعر ترمیم کریں {row.serial != null && <span className="font-ltr text-xs text-muted-foreground">#{row.serial}</span>}</h3>
+          <button onClick={onClose} className="p-1 rounded hover:bg-accent/50" aria-label="Close"><X className="h-4 w-4" /></button>
         </div>
         <textarea rows={4} dir="rtl" value={text} onChange={e => setText(e.target.value)}
-          className="urdu text-lg w-full rounded-lg bg-input border border-gold/20 p-3 focus:border-gold focus:outline-none" />
+          className="urdu text-lg w-full rounded-lg bg-input border border-border p-3 focus:outline-none" />
         <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <input dir="rtl" value={poet} onChange={e => setPoet(e.target.value)} placeholder="شاعر (اپڈیٹ کریں)"
-            className="urdu rounded-lg bg-input border border-gold/20 p-2.5 focus:border-gold focus:outline-none" />
-          <input dir="rtl" value={book} onChange={e => setBook(e.target.value)} placeholder="کتاب (اپڈیٹ کریں)"
-            className="urdu rounded-lg bg-input border border-gold/20 p-2.5 focus:border-gold focus:outline-none" />
+          <label className="font-ltr text-xs text-muted-foreground space-y-1">Poet
+            <select dir="rtl" value={poetId} onChange={e => setPoetId(e.target.value)} className={field}>
+              <option value="">—</option>
+              {(poets.data ?? []).map(p => <option key={p.id} value={p.id}>{p.name_urdu}</option>)}
+            </select>
+          </label>
+          <label className="font-ltr text-xs text-muted-foreground space-y-1">Book
+            <select dir="rtl" value={bookId} onChange={e => setBookId(e.target.value)} className={field}>
+              <option value="">—</option>
+              {(books.data ?? []).map(b => <option key={b.id} value={b.id}>{b.title_urdu}</option>)}
+            </select>
+          </label>
+          <label className="font-ltr text-xs text-muted-foreground space-y-1">Page
+            <input type="number" inputMode="numeric" value={pageNo} onChange={e => setPageNo(e.target.value)} className="font-ltr rounded-lg bg-input border border-border p-2.5 w-full" />
+          </label>
         </div>
+        <p className="font-ltr text-[11px] text-muted-foreground mt-2">Start and end letters update automatically when you save.</p>
         {err && <p className="text-destructive text-sm font-ltr mt-2">{err}</p>}
         <div className="mt-4 flex justify-end gap-2">
           <button onClick={onClose} className="font-ltr text-sm px-4 py-2 rounded-md text-muted-foreground hover:bg-accent/50">Cancel</button>
           <button disabled={busy} onClick={async () => {
             setBusy(true); setErr("");
-            try { await save({ data: { id: row.id, text_urdu: text, poet_name: poet, book_title: book } }); onSaved(); }
+            try {
+              const n = pageNo.trim() ? parseInt(pageNo, 10) : null;
+              await save({ data: { id: row.id, text_urdu: text, page_number: Number.isFinite(n as number) ? n : null, poet_id: poetId || null, book_id: bookId || null } });
+              onSaved();
+            }
             catch (e) { setErr(e instanceof Error ? e.message : "Failed"); }
             finally { setBusy(false); }
           }} className="bg-gold-gradient font-ltr text-sm font-semibold px-4 py-2 rounded-md inline-flex items-center gap-2 disabled:opacity-50">
