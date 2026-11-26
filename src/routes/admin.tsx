@@ -14,6 +14,9 @@ import { downloadCsv, rowsToCsv } from "@/lib/csv";
 import { Ban, CheckCircle2, Download, Flag, ImagePlus, Inbox, Loader2, Mail, Pencil, RefreshCw, Shield, ShieldCheck, Sparkles, Trash2, UserX, X } from "lucide-react";
 import { Pagination, usePaged } from "@/components/pagination";
 import { LibraryEditor } from "@/components/admin-library-editor";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { readAllEditorRows } from "@/lib/admin-editor";
 
 export const Route = createFileRoute("/admin")({
   ssr: false,
@@ -21,7 +24,15 @@ export const Route = createFileRoute("/admin")({
     const { data } = await supabase.auth.getUser();
     if (!data.user) throw redirect({ to: "/auth" });
   },
-  head: () => ({ meta: [{ title: "Admin — Bait Baazi" }] }),
+  head: () => ({ meta: [
+    { title: "Library Editor — Bait Baazi Admin" },
+    { name: "description", content: "Manage Bait Baazi poetry and correct imported shairs, poets and books." },
+    { property: "og:title", content: "Library Editor — Bait Baazi Admin" },
+    { property: "og:description", content: "Manage Bait Baazi poetry and correct imported shairs, poets and books." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+    { name: "robots", content: "noindex" },
+  ] }),
   component: AdminPage,
 });
 
@@ -74,10 +85,11 @@ function AdminPage() {
 
   const recent = useQuery({
     queryKey: ["admin", "recent-shair"],
-    queryFn: async () => {
-      const { data } = await supabase.from("shair").select("id, serial, text_urdu, start_letter, end_letter, source, created_at, poet_id, book_id, page_number").order("serial", { ascending: false }).limit(10000);
-      return (data ?? []) as ShairRow[];
-    },
+    queryFn: () => readAllEditorRows<ShairRow>(async (from, to) => {
+      const { data, error } = await supabase.from("shair").select("id, serial, text_urdu, start_letter, end_letter, source, created_at, poet_id, book_id, page_number").order("serial", { ascending: false }).order("id").range(from, to);
+      if (error) throw error;
+      return data ?? [];
+    }),
     enabled: isAdmin,
   });
   const [recentPage, setRecentPage] = useState(1);
@@ -419,10 +431,10 @@ function AdminPage() {
       <LibraryEditor />
 
       {/* Recent */}
-      <RecentShairSection recent={recent.data ?? []} page={recentPage} setPage={setRecentPage} onEdit={setEdit} onDelete={async (id) => {
+      {recent.isPending ? <Loader2 className="h-5 w-5 animate-spin" /> : recent.isError ? <p role="alert" className="font-ltr text-destructive">Could not load shairs.</p> : <RecentShairSection recent={recent.data ?? []} page={recentPage} setPage={setRecentPage} onEdit={setEdit} onDelete={async (id) => {
         if (!confirm("Delete this shair?")) return;
         await delFn({ data: { id } }); qc.invalidateQueries();
-      }} />
+      }} />}
 
       {edit && <EditModal row={edit} onClose={() => setEdit(null)} onSaved={() => { setEdit(null); qc.invalidateQueries(); }} save={editFn} />}
     </div>
@@ -453,7 +465,7 @@ function RecentShairSection({ recent, page, setPage, onEdit, onDelete }: {
         </div>
       </div>
       <input value={q} onChange={e => { setQ(e.target.value); setPage(1); }} placeholder="تلاش: متن یا نمبر (#123)"
-        className="urdu w-full mb-3 rounded-lg bg-input border border-border p-2.5 focus:outline-none" dir="rtl" />
+        aria-label="Find shair by text or reference" className="urdu w-full mb-3 rounded-lg bg-input border border-border p-2.5 focus:outline-none" dir="rtl" />
       <div className="space-y-2">
         {paged.slice.map((s) => (
           <div key={s.id} className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-2 border-b border-border/50 pb-2">
@@ -465,12 +477,12 @@ function RecentShairSection({ recent, page, setPage, onEdit, onDelete }: {
               <p className="urdu text-base sm:text-lg break-words whitespace-pre-line">{s.text_urdu}</p>
             </div>
             <div className="flex items-center gap-1 shrink-0">
-              <button onClick={() => onEdit(s)} className="p-2 rounded-md hover:bg-accent/50 text-gold" aria-label="Edit"><Pencil className="h-4 w-4" /></button>
+              <Button variant="ghost" size="icon" onClick={() => onEdit(s)} aria-label={`Edit shair #${s.serial}`} title="Edit shair"><Pencil /></Button>
               <button onClick={() => onDelete(s.id)} className="p-2 rounded-md hover:bg-destructive/20 text-destructive" aria-label="Delete"><Trash2 className="h-4 w-4" /></button>
             </div>
           </div>
         ))}
-        {!recent.length && <p className="text-muted-foreground text-sm">No shair yet.</p>}
+        {!filtered.length && <p className="text-muted-foreground text-sm font-ltr">{recent.length ? "No matching shair." : "No shair yet."}</p>}
       </div>
       <Pagination page={paged.page} totalPages={paged.totalPages} onChange={setPage} />
       <div className="mt-4 text-center">
@@ -490,53 +502,57 @@ function EditModal({ row, onClose, onSaved, save }: {
   const [pageNo, setPageNo] = useState(row.page_number != null ? String(row.page_number) : "");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string>("");
-  const poets = useQuery({ queryKey: ["admin", "poets"], queryFn: async () => (await supabase.from("poets").select("id, name_urdu").order("name_urdu")).data ?? [] });
-  const books = useQuery({ queryKey: ["admin", "books"], queryFn: async () => (await supabase.from("books").select("id, title_urdu").order("title_urdu")).data ?? [] });
+  const poets = useQuery({ queryKey: ["admin", "poet-options"], queryFn: () => readAllEditorRows(async (from, to) => {
+    const { data, error } = await supabase.from("poets").select("id, name_urdu").order("name_urdu").order("id").range(from, to);
+    if (error) throw error; return data ?? [];
+  }) });
+  const books = useQuery({ queryKey: ["admin", "book-options"], queryFn: () => readAllEditorRows(async (from, to) => {
+    const { data, error } = await supabase.from("books").select("id, title_urdu").order("title_urdu").order("id").range(from, to);
+    if (error) throw error; return data ?? [];
+  }) });
   const field = "urdu rounded-lg bg-input border border-border p-2.5 focus:outline-none w-full";
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center p-3 bg-black/70 backdrop-blur-sm" onClick={onClose}>
-      <div className="card-royal rounded-2xl w-full max-w-lg p-4 sm:p-6 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="urdu text-lg text-gold">شعر ترمیم کریں {row.serial != null && <span className="font-ltr text-xs text-muted-foreground">#{row.serial}</span>}</h3>
-          <button onClick={onClose} className="p-1 rounded hover:bg-accent/50" aria-label="Close"><X className="h-4 w-4" /></button>
-        </div>
-        <textarea rows={4} dir="rtl" value={text} onChange={e => setText(e.target.value)}
+    <Dialog open onOpenChange={open => { if (!open && !busy) onClose(); }}>
+      <DialogContent aria-describedby={undefined} className="w-[calc(100%-1.5rem)] max-h-[90dvh] overflow-y-auto rounded-lg p-4 sm:p-6">
+        <DialogTitle className="urdu text-lg text-gold leading-loose">شعر ترمیم کریں {row.serial != null && <span className="font-ltr text-xs text-muted-foreground">#{row.serial}</span>}</DialogTitle>
+        <textarea aria-label="Shair reading" rows={5} dir="rtl" value={text} onChange={e => setText(e.target.value)}
           className="urdu text-lg w-full rounded-lg bg-input border border-border p-3 focus:outline-none" />
         <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
           <label className="font-ltr text-xs text-muted-foreground space-y-1">Poet
-            <select dir="rtl" value={poetId} onChange={e => setPoetId(e.target.value)} className={field}>
+            <select disabled={poets.isPending || poets.isError} dir="rtl" value={poetId} onChange={e => setPoetId(e.target.value)} className={field}>
               <option value="">—</option>
               {(poets.data ?? []).map(p => <option key={p.id} value={p.id}>{p.name_urdu}</option>)}
             </select>
           </label>
           <label className="font-ltr text-xs text-muted-foreground space-y-1">Book
-            <select dir="rtl" value={bookId} onChange={e => setBookId(e.target.value)} className={field}>
+            <select disabled={books.isPending || books.isError} dir="rtl" value={bookId} onChange={e => setBookId(e.target.value)} className={field}>
               <option value="">—</option>
               {(books.data ?? []).map(b => <option key={b.id} value={b.id}>{b.title_urdu}</option>)}
             </select>
           </label>
           <label className="font-ltr text-xs text-muted-foreground space-y-1">Page
-            <input type="number" inputMode="numeric" value={pageNo} onChange={e => setPageNo(e.target.value)} className="font-ltr rounded-lg bg-input border border-border p-2.5 w-full" />
+            <input type="number" min="1" step="1" inputMode="numeric" value={pageNo} onChange={e => setPageNo(e.target.value)} className="font-ltr rounded-lg bg-input border border-border p-2.5 w-full" />
           </label>
         </div>
-        <p className="font-ltr text-[11px] text-muted-foreground mt-2">Start and end letters update automatically when you save.</p>
-        {err && <p className="text-destructive text-sm font-ltr mt-2">{err}</p>}
+        {(poets.isError || books.isError) && <p role="alert" className="font-ltr text-sm text-destructive">Could not load poet or book choices.</p>}
+        {err && <p role="alert" className="text-destructive text-sm font-ltr mt-2">{err}</p>}
         <div className="mt-4 flex justify-end gap-2">
-          <button onClick={onClose} className="font-ltr text-sm px-4 py-2 rounded-md text-muted-foreground hover:bg-accent/50">Cancel</button>
-          <button disabled={busy} onClick={async () => {
+          <Button variant="ghost" disabled={busy} onClick={onClose}>Cancel</Button>
+          <Button disabled={busy || poets.isPending || books.isPending || poets.isError || books.isError} onClick={async () => {
             setBusy(true); setErr("");
             try {
-              const n = pageNo.trim() ? parseInt(pageNo, 10) : null;
-              await save({ data: { id: row.id, text_urdu: text, page_number: Number.isFinite(n as number) ? n : null, poet_id: poetId || null, book_id: bookId || null } });
+              const n = pageNo.trim() ? Number(pageNo) : null;
+              if (n !== null && (!Number.isInteger(n) || n < 1)) throw new Error("Enter a positive whole page number.");
+              await save({ data: { id: row.id, text_urdu: text, page_number: n, poet_id: poetId || null, book_id: bookId || null } });
               onSaved();
             }
             catch (e) { setErr(e instanceof Error ? e.message : "Failed"); }
             finally { setBusy(false); }
-          }} className="bg-gold-gradient font-ltr text-sm font-semibold px-4 py-2 rounded-md inline-flex items-center gap-2 disabled:opacity-50">
+          }} className="font-ltr">
             {busy && <Loader2 className="h-4 w-4 animate-spin" />} Save
-          </button>
+          </Button>
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

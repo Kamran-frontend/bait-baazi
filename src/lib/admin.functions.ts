@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
 import { getStartLetter, getEndLetter, isUrduLetter, isAttackLetter } from "@/lib/urdu";
+import { editShairSchema, shairEditPatch } from "@/lib/admin-editor";
 
 const OWNER_EMAIL = "kamranali130893@gmail.com";
 
@@ -82,46 +83,13 @@ export const addShair = createServerFn({ method: "POST" })
 
 export const editShair = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .validator((d: unknown) => z.object({
-    id: z.string().uuid(),
-    text_urdu: z.string().min(3),
-    poet_name: z.string().optional(),
-    book_title: z.string().optional(),
-    page_number: z.number().int().nullable().optional(),
-    poet_id: z.string().uuid().nullable().optional(),
-    book_id: z.string().uuid().nullable().optional(),
-  }).parse(d))
+  .validator((d: unknown) => editShairSchema.parse(d))
   .handler(async ({ data, context }) => {
     await assertAdmin(context);
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const start = getStartLetter(data.text_urdu);
-    const end = getEndLetter(data.text_urdu);
-    if (!isUrduLetter(start) || !isUrduLetter(end)) throw new Error("Could not detect start/end letter");
-    if (data.poet_id !== undefined || data.book_id !== undefined) {
-      const { error } = await supabaseAdmin.from("shair").update({
-        text_urdu: data.text_urdu.trim(), start_letter: start, end_letter: end,
-        is_attack: isAttackLetter(end), page_number: data.page_number ?? null,
-        poet_id: data.poet_id ?? null, book_id: data.book_id ?? null,
-      }).eq("id", data.id);
-      if (error) throw new Error(error.message);
-      return { ok: true, start, end };
-    }
-    const { poet_id, book_id } = await upsertPoetAndBook(data.poet_name, data.book_title);
-    const patch: {
-      text_urdu: string; start_letter: string; end_letter: string;
-      is_attack: boolean; page_number: number | null;
-      poet_id?: string; book_id?: string;
-    } = {
-      text_urdu: data.text_urdu.trim(),
-      start_letter: start, end_letter: end,
-      is_attack: isAttackLetter(end),
-      page_number: data.page_number ?? null,
-    };
-    if (poet_id) patch.poet_id = poet_id;
-    if (book_id) patch.book_id = book_id;
-    const { error } = await supabaseAdmin.from("shair").update(patch).eq("id", data.id);
+    const patch = shairEditPatch(data);
+    const { error } = await context.supabase.from("shair").update(patch).eq("id", data.id).select("id").single();
     if (error) throw new Error(error.message);
-    return { ok: true, start, end };
+    return { ok: true, start: patch.start_letter, end: patch.end_letter };
   });
 
 export const deleteShair = createServerFn({ method: "POST" })
